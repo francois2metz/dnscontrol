@@ -546,6 +546,8 @@ func https(name string, priority uint16, target string, params string) *models.R
 	r.SvcPriority = priority
 	r.SvcParams = params
 
+	r.RDATA, _ = models.MakeHTTPS(globalDCN.NameASCII, priority, target, params)
+
 	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }

@@ -209,8 +209,11 @@ func replaceSvcbIgnores(records Records, echs map[string]*svcbv2.ECHCONFIG) (Rec
 			continue
 		}
 
-		// Skip records that don't have ech=IGNORE.
-		if ec, ok := rec.GetSVCBEchConfig(); ok && !bytes.Equal(ec.ECH, []byte("IGNORE")) {
+		// // Skip records that don't have ech=IGNORE.
+		// if ec, ok := rec.GetSVCBEchConfig(); ok && !bytes.Equal(ec.ECH, []byte("IGNORE")) {
+		// 	continue
+		// }
+		if !hasEchIgnore(rec) {
 			continue
 		}
 
@@ -238,6 +241,25 @@ func replaceSvcbIgnores(records Records, echs map[string]*svcbv2.ECHCONFIG) (Rec
 	}
 
 	return records, edits
+}
+
+func hasEchIgnore(rec *RecordConfig) bool {
+	if rec.TypeNum != dnsv2.TypeSVCB && rec.TypeNum != dnsv2.TypeHTTPS {
+		panic("assertion failed: hasEchIgnore called when .Type is not SVCB or HTTPS")
+	}
+
+	ec, ok := rec.GetSVCBEchConfig()
+	if !ok {
+		return false
+	}
+
+	if bytes.Equal(ec.ECH, []byte("IGNORE")) {
+		return true
+	}
+
+	fmt.Printf("DEBUG: hasEchIgnore: record %s has ech=%s\n", rec.NameFQDN, string(ec.ECH))
+
+	return false
 }
 
 func SVCBReplaceEch(rr dnsrdatav2.SVCB, echConfig *svcbv2.ECHCONFIG) dnsrdatav2.SVCB {

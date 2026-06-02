@@ -139,10 +139,10 @@ func MakeSVCB(origin string, priority any, target string, params any) (dnsv2.RDA
 	case []svcbv2.Pair:
 		return dnsrdatav2.SVCB{Priority: mustbe.Uint16(priority), Target: mustbe.TargetHost(origin, target), Value: v}, nil
 	case string:
-		v = strings.ReplaceAll(" "+v+" ", ` ech=IGNORE `, ` ech=0000`)
+		v = strings.ReplaceAll(" "+v+" ", ` ech=IGNORE `, ` ech=1000`)
 		v = strings.ReplaceAll(v, `  `, ` `) // Collapse 2 spaces into 1
 		v = strings.TrimSpace(v)
-		// ech=0000 is a special value that indicates "use the ech value from
+		// ech=1000 is a special value that indicates "use the ech value from
 		// the existing zone." This is not an RFC standard, just something we do
 		// in DNSControl. There is a very small chance that someone will
 		// actually have an ech value of "0000" but if that happens I will eat
