@@ -1,0 +1,119 @@
+package mustbe
+
+import (
+	"fmt"
+	"math"
+	"strconv"
+)
+
+func Uint8(arg any) uint8 {
+	switch v := arg.(type) {
+	case uint8:
+		return v
+	case uint16:
+		if v > math.MaxUint8 {
+			panic(fmt.Sprintf("value %q overflows uint8", arg))
+		}
+		return uint8(v)
+	case int16:
+		if v < 0 || v > math.MaxUint8 {
+			panic(fmt.Sprintf("value %q overflows uint8", arg))
+		}
+		return uint8(v)
+	case uint:
+		if v > math.MaxUint8 {
+			panic(fmt.Sprintf("value %q overflows uint8", arg))
+		}
+		return uint8(v)
+	case int:
+		if v < 0 || v > math.MaxUint8 {
+			panic(fmt.Sprintf("value %q overflows uint8", arg))
+		}
+		return uint8(v)
+	case float64:
+		if v < 0 || v > math.MaxUint8 {
+			panic(fmt.Sprintf("value %q overflows uint8", arg))
+		}
+		return uint8(v)
+	case string:
+		ni, err := strconv.ParseUint(arg.(string), 10, 8)
+		if err != nil {
+			panic(fmt.Sprintf("value %q is not a number (uint8 wanted)", arg))
+		}
+		return uint8(ni)
+	}
+	panic(fmt.Sprintf("value %q is type %T, expected uint8", arg, arg))
+}
+
+func Uint16(arg any) uint16 {
+	switch v := arg.(type) {
+	case uint8:
+		return uint16(v)
+	case uint16:
+		return v
+	case int16:
+		if v < 0 {
+			panic(fmt.Sprintf("value %q underflows uint16", arg))
+		}
+	case uint:
+		if v > math.MaxUint16 {
+			panic(fmt.Sprintf("value %q overflows uint16", arg))
+		}
+		return uint16(v)
+	case int:
+		if v < 0 || v > math.MaxUint16 {
+			panic(fmt.Sprintf("value %q overflows uint16", arg))
+		}
+		return uint16(v)
+	case float64:
+		if v < 0 || v > math.MaxUint16 {
+			panic(fmt.Sprintf("value %q overflows uint16", arg))
+		}
+		return uint16(v)
+	case string:
+		ni, err := strconv.ParseUint(arg.(string), 10, 16)
+		if err != nil {
+			panic(fmt.Sprintf("value %q is not a number (uint16 wanted)", arg))
+		}
+		return uint16(ni)
+	}
+	panic(fmt.Sprintf("value %q is type %T, expected uint16", arg, arg))
+}
+
+func Uint32(arg any) uint32 {
+	switch v := arg.(type) {
+	case uint8:
+		return uint32(v)
+	case uint16:
+		return uint32(v)
+	case int16:
+		if v < 0 {
+			panic(fmt.Sprintf("value %q underflows uint32", arg))
+		}
+		return uint32(v)
+	case uint32:
+		return v
+	case uint:
+		if v > math.MaxUint32 {
+			panic(fmt.Sprintf("value %q overflows uint32", arg))
+		}
+		return uint32(v)
+	case int:
+		if v < 0 || v > math.MaxUint32 {
+			panic(fmt.Sprintf("value %q overflows uint32", arg))
+		}
+		return uint32(v)
+	case float64:
+		if v < 0 || v > math.MaxUint32 {
+			panic(fmt.Sprintf("value %q overflows uint32", arg))
+		}
+		return uint32(v)
+	case string:
+		ni, err := strconv.ParseUint(arg.(string), 10, 32)
+		if err != nil {
+			panic(fmt.Sprintf("value %q is not a number (uint32 wanted)", arg))
+		}
+		return uint32(ni)
+	}
+	panic(fmt.Sprintf("value %q is type %T, expected uint32", arg, arg))
+}

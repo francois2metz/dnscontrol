@@ -1,139 +1,172 @@
 package models
 
 import (
+	"fmt"
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	dnsrdatav2 "codeberg.org/miekg/dns/rdata"
+	svcbv2 "codeberg.org/miekg/dns/svcb"
 
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	_ "github.com/DNSControl/dnscontrol/v4/pkg/privatetypes"
+	privatetypesrdata "github.com/DNSControl/dnscontrol/v4/pkg/privatetypes/rdata"
+	dnsv1 "github.com/miekg/dns"
 )
 
+func MakeA(target any) (dnsv2.RDATA, error) {
+	return dnsrdatav2.A{Addr: mustbe.IPv4(target)}, nil
+}
+func MakeALIAS(origin, target string) (dnsv2.RDATA, error) {
+	return privatetypesrdata.ALIAS{Target: mustbe.TargetHost(origin, target)}, nil
+}
+func MakeAAAA(target any) (dnsv2.RDATA, error) {
+	return dnsrdatav2.AAAA{Addr: mustbe.IPv6(target)}, nil
+}
+
+func MakeCAA(origin string, flags any, tag any, value any) (dnsv2.RDATA, error) {
+	return dnsrdatav2.CAA{Flag: mustbe.Uint8(flags), Tag: mustbe.RawString(tag), Value: mustbe.RawString(value)}, nil
+}
 func MakeCNAME(origin, target string) (dnsv2.RDATA, error) {
 	return dnsrdatav2.CNAME{Target: mustbe.TargetHost(origin, target)}, nil
 }
-
-/*
-			//targ := dnsutilv1.AddOrigin(rc.GetTargetField(), origin+".")
-			//rc.RDATA = dnsrdatav2.CNAME{Target: targ}
-			rc.RDATA, err = MakeCNAME(origin, rc.GetTargetField())
-
-		case "CF_WORKER_ROUTE":
-			part := strings.SplitN(rc.GetTargetField(), ",", 2)
-			rc.RDATA = privatetypesrdata.CFWORKERROUTE{When: part[0], Then: part[1]}
-
-		case "DHCID":
-			rc.RDATA = dnsrdatav2.DHCID{Digest: rc.GetTargetField()}
-		case "DNAME":
-			targ := dnsutilv1.AddOrigin(rc.GetTargetField(), origin+".")
-			rc.RDATA = dnsrdatav2.DNAME{Target: targ}
-		case "DNSKEY":
-			rc.RDATA = dnsrdatav2.DNSKEY{Flags: rc.DnskeyFlags, Protocol: rc.DnskeyProtocol, Algorithm: rc.DnskeyAlgorithm, PublicKey: rc.DnskeyPublicKey}
-		case "DS":
-			rc.RDATA = dnsrdatav2.DS{KeyTag: rc.DsKeyTag, Algorithm: rc.DsAlgorithm, DigestType: rc.DsDigestType, Digest: rc.GetTargetField()}
-
-		case "FRAME":
-			rc.RDATA = privatetypesrdata.FRAME{Target: rc.GetTargetField()}
-
-		case "HTTPS":
-			if rc.SvcPriority == 0 {
-				rc.RDATA = dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: rc.GetTargetField()}
-			} else {
-				p := rc.SvcParams
-				p = strings.ReplaceAll(p, `ech=IGNORE`, ``)
-				p = strings.ReplaceAll(p, ` `, ` `) // Collapse 2 spaces into 1
-				p = strings.TrimSpace(p)
-				rd, err := dnsv2.NewData(dnsv2.TypeHTTPS, fmt.Sprintf("%d %s %s", rc.SvcPriority, rc.GetTargetField(), p), origin)
-				if err != nil {
-					panic(fmt.Sprintf("BUG: Failed to create RDATA for HTTPS record: %v", err))
-				}
-				rc.RDATA = rd
-			}
-
-		case "LOC":
-			rc.RDATA = dnsrdatav2.LOC{Version: rc.LocVersion, Size: rc.LocSize, HorizPre: rc.LocHorizPre, VertPre: rc.LocVertPre, Latitude: rc.LocLatitude, Longitude: rc.LocLongitude, Altitude: rc.LocAltitude}
-
-		case "MIKROTIK_FWD":
-			rc.RDATA = privatetypesrdata.MIKROTIKFWD{ForwardTo: rc.GetTargetField()}
-		case "MIKROTIK_NXDOMAIN":
-			rc.RDATA = privatetypesrdata.MIKROTIKNXDOMAIN{}
-		case "MX":
-			rc.RDATA = dnsrdatav2.MX{Preference: rc.MxPreference, Mx: rc.GetTargetField()}
-
-		case "NS":
-			rc.RDATA = dnsrdatav2.NS{Ns: rc.GetTargetField()}
-		case "NAPTR":
-			rc.RDATA = dnsrdatav2.NAPTR{Order: rc.NaptrOrder, Preference: rc.NaptrPreference, Flags: rc.NaptrFlags, Service: rc.NaptrService, Regexp: rc.NaptrRegexp, Replacement: rc.GetTargetField()}
-
-		case "OPENPGPKEY":
-			rc.RDATA = dnsrdatav2.OPENPGPKEY{PublicKey: rc.GetTargetField()}
-
-		case "PORKBUN_URLFWD":
-			rc.RDATA = privatetypesrdata.PORKBUNURLFWD{}
-		case "PTR":
-			rc.RDATA = dnsrdatav2.PTR{Ptr: rc.GetTargetField()}
-
-		case "RP":
-			rc.RDATA = dnsrdatav2.RP{Mbox: rc.F.(dnsv1.RP).Mbox, Txt: rc.F.(dnsv1.RP).Txt}
-		case "R53_ALIAS":
-			rc.RDATA = privatetypesrdata.R53ALIAS{
-				AliasType:        rc.R53Alias["type"],
-				Target:           rc.GetTargetField(),
-				ZoneID:           rc.R53Alias["zone_id"],
-				EvalTargetHealth: rc.R53Alias["evaluate_target_health"],
-			}
-
-		case "SMIMEA":
-			rc.RDATA = dnsrdatav2.SMIMEA{Usage: rc.SmimeaUsage, Selector: rc.SmimeaSelector, MatchingType: rc.SmimeaMatchingType, Certificate: rc.GetTargetField()}
-		case "SOA":
-			rc.RDATA = dnsrdatav2.SOA{Ns: rc.GetTargetField(), Mbox: rc.SoaMbox, Serial: rc.SoaSerial, Refresh: rc.SoaRefresh, Retry: rc.SoaRetry, Expire: rc.SoaExpire, Minttl: rc.SoaMinttl}
-		case "SRV":
-			rc.RDATA = dnsrdatav2.SRV{Priority: rc.SrvPriority, Weight: rc.SrvWeight, Port: rc.SrvPort, Target: rc.GetTargetField()}
-		case "SSHFP":
-			rc.RDATA = dnsrdatav2.SSHFP{Algorithm: rc.SshfpAlgorithm, Type: rc.SshfpFingerprint, FingerPrint: rc.GetTargetField()}
-		case "SVCB":
-			if rc.SvcPriority == 0 {
-				rc.RDATA = dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: rc.GetTargetField()}
-			} else {
-				rd, err := dnsv2.NewData(dnsv2.TypeSVCB, fmt.Sprintf("%d %s %s", rc.SvcPriority, rc.GetTargetField(), rc.SvcParams), origin)
-				if err != nil {
-					panic(fmt.Sprintf("BUG: Failed to create RDATA for HTTPS record: %v", err))
-				}
-				rc.RDATA = rd
-			}
-
-		case "TLSA":
-			rc.RDATA = dnsrdatav2.TLSA{Usage: rc.TlsaUsage, Selector: rc.TlsaSelector, MatchingType: rc.TlsaMatchingType, Certificate: rc.GetTargetField()}
-
-		case "TXT":
-			rc.RDATA = dnsrdatav2.TXT{Txt: []string{rc.GetTargetField()}}
-
-		case "URL":
-			rc.RDATA = privatetypesrdata.URL{Location: rc.GetTargetField()}
-		case "URL301":
-			rc.RDATA = privatetypesrdata.URL{Location: rc.GetTargetField()}
-
-		default:
-			panic(fmt.Sprintf("RDATA FIXUP NOT IMPLEMENTED TYPE=%q", rc.Type))
-		}
-	}
-
-	// .ComparableV3:
-	if rc.ComparableV3 == "" {
-		switch rc.Type {
-		case "SOA":
-			// The comparable string for SOA intentionally excludes the serial
-			// number, because the serial number changes on every update and
-			// would prevent correct diffing. List it as "X" so-as it stands out
-			// in debug output that the serial is intentionally excluded.
-			rc.ComparableV3 = fmt.Sprintf("%s %s X %d %d %d %d", rc.GetTargetField(), rc.SoaMbox, rc.SoaRefresh, rc.SoaRetry, rc.SoaExpire, rc.SoaMinttl)
-		default:
-			rc.ComparableV3 = strings.TrimSpace(rc.RDATA.String())
-		}
-
-		// Note to self: RDATA.String() sometimes leaves a trailing space.  File a bug.
-		// if strings.HasSuffix(rc.ComparableV3, " ") {
-		// 	rc.ComparableV3 = rc.ComparableV3 + "W"
-		// }
-	}
+func MakeCFWORKERROUTE(when, then string) (dnsv2.RDATA, error) {
+	return privatetypesrdata.CFWORKERROUTE{When: mustbe.RawString(when), Then: mustbe.RawString(then)}, nil
 }
-*/
+
+func MakeDHCID(origin, target string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.DHCID{Digest: mustbe.RawString(target)}, nil
+}
+func MakeDNAME(origin, target string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.DNAME{Target: mustbe.TargetHost(origin, target)}, nil
+}
+func MakeDNSKEY(origin string, flags any, protocol any, algorithm any, publicKey any) (dnsv2.RDATA, error) {
+	return dnsrdatav2.DNSKEY{Flags: mustbe.Uint16(flags), Protocol: mustbe.Uint8(protocol), Algorithm: mustbe.Uint8(algorithm), PublicKey: mustbe.RawString(publicKey)}, nil
+}
+
+func MakeDS(origin string, keyTag any, algorithm any, digestType any, digest any) (dnsv2.RDATA, error) {
+	return dnsrdatav2.DS{KeyTag: mustbe.Uint16(keyTag), Algorithm: mustbe.Uint8(algorithm), DigestType: mustbe.Uint8(digestType), Digest: mustbe.RawString(digest)}, nil
+}
+
+func MakeHTTPS(origin string, priority any, target string, params any) (dnsv2.RDATA, error) {
+	return MakeSVCB(origin, priority, target, params)
+}
+
+func MakeLOC(origin string,
+	version any, size any,
+	horizPre any, vertPre any,
+	latitude any, longitude any,
+	altitude any,
+) (dnsv2.RDATA, error) {
+	return dnsrdatav2.LOC{
+		Version: mustbe.Uint8(version), Size: mustbe.Uint8(size),
+		HorizPre: mustbe.Uint8(horizPre), VertPre: mustbe.Uint8(vertPre),
+		Latitude: mustbe.Uint32(latitude), Longitude: mustbe.Uint32(longitude),
+		Altitude: mustbe.Uint32(altitude)}, nil
+}
+
+func MakeMIKROTIKFWD(origin, target string) (dnsv2.RDATA, error) {
+	return privatetypesrdata.MIKROTIKFWD{ForwardTo: mustbe.TargetHost(origin, target)}, nil
+}
+func MakeMIKROTIKNXDOMAIN() (dnsv2.RDATA, error) {
+	return privatetypesrdata.MIKROTIKNXDOMAIN{}, nil
+}
+func MakeMX(origin string, preference any, mx string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.MX{Preference: mustbe.Uint16(preference), Mx: mustbe.TargetHost(origin, mx)}, nil
+}
+
+func MakeNS(origin, ns string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.NS{Ns: mustbe.TargetHost(origin, ns)}, nil
+}
+func MakeNAPTR(origin string, order any, preference any, flags any, service any, regexp any, replacement string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.NAPTR{Order: mustbe.Uint16(order), Preference: mustbe.Uint16(preference), Flags: mustbe.RawString(flags), Service: mustbe.RawString(service), Regexp: mustbe.RawString(regexp), Replacement: mustbe.TargetHost(origin, replacement)}, nil
+}
+
+func MakeOPENPGPKEY(origin string, publicKey string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.OPENPGPKEY{PublicKey: mustbe.RawString(publicKey)}, nil
+}
+
+func MakePORKBUNURLFWD() (dnsv2.RDATA, error) {
+	return privatetypesrdata.PORKBUNURLFWD{}, nil
+}
+
+func MakePTR(origin, ptr string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.PTR{Ptr: mustbe.TargetHost(origin, ptr)}, nil
+}
+
+func MakeRP(origin, mbox string, txt string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.RP{Mbox: mustbe.TargetHost(origin, mbox), Txt: mustbe.RawString(txt)}, nil
+}
+
+func MakeR53ALIAS(origin string, aliasType string, target string, zoneID string, evalTargetHealth any) (dnsv2.RDATA, error) {
+	return privatetypesrdata.R53ALIAS{
+		AliasType:        mustbe.RawString(aliasType),
+		Target:           mustbe.TargetHost(origin, target),
+		ZoneID:           mustbe.RawString(zoneID),
+		EvalTargetHealth: mustbe.RawString(evalTargetHealth),
+		// FIXME(tlim): EvalTargetHealth is a boolean in our internal model but the R53ALIAS type expects a string. This is a hack to convert it to the expected format. We should probably change the R53ALIAS type to use a boolean for this field.
+	}, nil
+}
+
+func MakeSMIMEA(origin string, usage any, selector any, matchingType any, certificate string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.SMIMEA{Usage: mustbe.Uint8(usage), Selector: mustbe.Uint8(selector), MatchingType: mustbe.Uint8(matchingType), Certificate: mustbe.RawString(certificate)}, nil
+}
+
+func MakeSOA(origin, ns string, mbox string, serial any, refresh any, retry any, expire any, minttl any) (dnsv2.RDATA, error) {
+	return dnsrdatav2.SOA{Ns: mustbe.TargetHost(origin, ns), Mbox: mustbe.TargetHost(origin, mbox), Serial: mustbe.Uint32(serial), Refresh: mustbe.Uint32(refresh), Retry: mustbe.Uint32(retry), Expire: mustbe.Uint32(expire), Minttl: mustbe.Uint32(minttl)}, nil
+}
+
+func MakeSRV(origin string, priority any, weight any, port any, target string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.SRV{Priority: mustbe.Uint16(priority), Weight: mustbe.Uint16(weight), Port: mustbe.Uint16(port), Target: mustbe.TargetHost(origin, target)}, nil
+}
+
+func MakeSSHFP(origin string, algorithm any, fingerprintType any, fingerprint string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.SSHFP{Algorithm: mustbe.Uint8(algorithm), Type: mustbe.Uint8(fingerprintType), FingerPrint: mustbe.RawString(fingerprint)}, nil
+}
+
+func MakeSVCB(origin string, priority any, target string, params any) (dnsv2.RDATA, error) {
+	if priority == 0 {
+		return dnsrdatav2.SVCB{Priority: mustbe.Uint16(priority), Target: mustbe.TargetHost(origin, target)}, nil
+	}
+
+	switch v := params.(type) {
+	case []dnsv1.SVCBKeyValue:
+		pv2, err := convertSVCBv1v2(v) // This hasn't tested extensively.
+		if err != nil {
+			panic("BUG: Failed to convert SVCB parameters from v1 to v2: " + err.Error())
+		}
+		return dnsrdatav2.SVCB{Priority: mustbe.Uint16(priority), Target: mustbe.TargetHost(origin, target), Value: pv2}, nil
+	case []svcbv2.Pair:
+		return dnsrdatav2.SVCB{Priority: mustbe.Uint16(priority), Target: mustbe.TargetHost(origin, target), Value: v}, nil
+	case string:
+		v = strings.ReplaceAll(" "+v+" ", ` ech=IGNORE `, ` ech=0000`)
+		v = strings.ReplaceAll(v, `  `, ` `) // Collapse 2 spaces into 1
+		v = strings.TrimSpace(v)
+		// ech=0000 is a special value that indicates "use the ech value from
+		// the existing zone." This is not an RFC standard, just something we do
+		// in DNSControl. There is a very small chance that someone will
+		// actually have an ech value of "0000" but if that happens I will eat
+		// my hat.
+
+		return dnsv2.NewData(dnsv2.TypeHTTPS, fmt.Sprintf("%d %s %s", mustbe.Uint16(priority), mustbe.TargetHost(origin, target), params))
+		// NB(tlim): It's an abomination to construct this string just to parse it but dnsv2 doesn't expose the parser in a way to do a partial line.
+	}
+
+	panic(fmt.Sprintf("BUG: Invalid params type for SVCB/HTTPS record: %T", params))
+}
+
+func MakeTLSA(origin string, usage any, selector any, matchingType any, certificate string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.TLSA{Usage: mustbe.Uint8(usage), Selector: mustbe.Uint8(selector), MatchingType: mustbe.Uint8(matchingType), Certificate: mustbe.RawString(certificate)}, nil
+}
+
+func MakeTXT(origin string, txt string) (dnsv2.RDATA, error) {
+	return dnsrdatav2.TXT{Txt: mustbe.Txts(txt)}, nil
+}
+
+func MakeURL(origin string, location string) (dnsv2.RDATA, error) {
+	return privatetypesrdata.URL{Location: mustbe.RawString(location)}, nil
+}
+
+func MakeURL301(origin string, location string) (dnsv2.RDATA, error) {
+	return privatetypesrdata.URL{Location: mustbe.RawString(location)}, nil
+}

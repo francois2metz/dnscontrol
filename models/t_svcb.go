@@ -105,43 +105,44 @@ func (rc *RecordConfig) SetTargetSVCBString(origin, contents string) error {
 	return nil
 }
 
-// func convertSVCBv1v2(params []dnsv1.SVCBKeyValue) ([]svcbv2.Pair, error) {
-// 	var value []svcbv2.Pair
-// 	for _, kvV1 := range params {
-// 		kV1 := kvV1.Key().String()
-// 		keyCodeV2 := svcbv2.StringToKey(kV1)
-// 		vV1 := kvV1.String()
-// 		if len(vV1) > 2 && vV1[0] == '"' && vV1[len(vV1)-1] == '"' {
-// 			panic("V has quotes")
-// 		}
-// 		fmt.Printf("DEBUG: convertSVCBv1v2: k=%s keyCode=%d v1=%s\n", kV1, keyCodeV2, vV1)
+// convertSVCBv1v2 converts dnsv1's struct to dnsv2's struct. It hasn't been tested extensively.
+func convertSVCBv1v2(params []dnsv1.SVCBKeyValue) ([]svcbv2.Pair, error) {
+	var value []svcbv2.Pair
+	for _, kvV1 := range params {
+		kV1 := kvV1.Key().String()
+		keyCodeV2 := svcbv2.StringToKey(kV1)
+		vV1 := kvV1.String()
+		if len(vV1) > 2 && vV1[0] == '"' && vV1[len(vV1)-1] == '"' {
+			panic("V has quotes")
+		}
+		//fmt.Printf("DEBUG: convertSVCBv1v2: k=%s keyCode=%d v1=%s\n", kV1, keyCodeV2, vV1)
 
-// 		pairFn := svcbv2.KeyToPair(keyCodeV2)
-// 		if pairFn == nil {
-// 			return nil, fmt.Errorf("failed to lookup svc key: %s", kV1)
-// 		}
-// 		pair := pairFn()
-// 		if svcbv2.PairToKey(pair) != keyCodeV2 {
-// 			return nil, fmt.Errorf("key constant is not in sync: %v", keyCodeV2)
-// 		}
-// 		err := svcbv2.Parse(pair, vV1, "")
-// 		if err != nil {
-// 			return nil, fmt.Errorf("failed to parse svc pair: %s", kV1)
-// 		}
+		pairFn := svcbv2.KeyToPair(keyCodeV2)
+		if pairFn == nil {
+			return nil, fmt.Errorf("failed to lookup svc key: %s", kV1)
+		}
+		pair := pairFn()
+		if svcbv2.PairToKey(pair) != keyCodeV2 {
+			return nil, fmt.Errorf("key constant is not in sync: %v", keyCodeV2)
+		}
+		err := svcbv2.Parse(pair, vV1, "")
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse svc pair: %s", kV1)
+		}
 
-// 		vV2 := pair.String()
-// 		if len(vV2) > 2 && vV2[0] == '"' && vV2[len(vV2)-1] == '"' {
-// 			panic("V2 has quotes")
-// 		}
-// 		if vV1 != vV2 {
-// 			panic(fmt.Sprintf("conversion from v1 to v2 is not stable: key=%s v1=%s v2=%s", kV1, vV1, vV2))
-// 		}
+		vV2 := pair.String()
+		if len(vV2) > 2 && vV2[0] == '"' && vV2[len(vV2)-1] == '"' {
+			panic("V2 has quotes")
+		}
+		if vV1 != vV2 {
+			panic(fmt.Sprintf("conversion from v1 to v2 is not stable: key=%s v1=%s v2=%s", kV1, vV1, vV2))
+		}
 
-// 		value = append(value, pair)
-// 	}
+		value = append(value, pair)
+	}
 
-// 	return value, nil
-// }
+	return value, nil
+}
 
 func ModifySVCBForComparison(existing, desired Records) Records {
 
