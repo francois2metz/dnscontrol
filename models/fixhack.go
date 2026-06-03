@@ -83,7 +83,7 @@ func (rc *RecordConfig) FixUp(origin string) {
 		case "DNSKEY":
 			rc.RDATA, err = MakeDNSKEY(origin, rc.DnskeyFlags, rc.DnskeyProtocol, rc.DnskeyAlgorithm, rc.DnskeyPublicKey)
 		case "DS":
-			rc.RDATA, err = MakeDS(origin, rc.DsKeyTag, rc.DsAlgorithm, rc.DsDigestType, rc.GetTargetField())
+			rc.RDATA, err = MakeDS(origin, rc.DsKeyTag, rc.DsAlgorithm, rc.DsDigestType, rc.DsDigest)
 
 		case "FRAME":
 			rc.RDATA, err = privatetypesrdata.MakeFRAME(origin, rc.GetTargetField())
