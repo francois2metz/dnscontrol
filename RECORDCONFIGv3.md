@@ -17,8 +17,12 @@ DELETE THIS BEFORE THE RELEASE
 ### Potential breaking changes
 
 ### TODOs:
-
-* `pkg/txtutil/{miekg.go miekg_test.go ddd/ddd.go}` come from dnsv2.  Upstream changes?
+* Fix HTTPS on SAKURACLOUD
+* Port Cloudflare Single Redirects
+* Port RP
 * Handle `ech=IGNORE` when it is ech=0000
 * PTR magic should be implemented in pkg/js??
 
+### miekg requests
+
+* `pkg/txtutil/{miekg.go miekg_test.go ddd/ddd.go}` come from dnsv2.  Upstream changes?

@@ -33,7 +33,7 @@ func nativeToRecords(n livedns.DomainRecord, origin string) (rcs []*models.Recor
 		if rtypeinfo.IsModernType(rtype) {
 			rc, err = rtypecontrol.NewRecordConfigFromString(n.RrsetName, uint32(n.RrsetTTL), rtype, value, dcn)
 			if err != nil {
-				return nil, fmt.Errorf("unparsable record received from gandi: %w", err)
+				return nil, fmt.Errorf("unparsable record received from gandi1: %w", err)
 			}
 			rc.Original = n
 		} else {
@@ -51,7 +51,7 @@ func nativeToRecords(n livedns.DomainRecord, origin string) (rcs []*models.Recor
 				err = rc.PopulateFromStringFunc(rtype, value, origin, txtutil.ParseQuoted)
 			}
 			if err != nil {
-				return nil, fmt.Errorf("unparsable record received from gandi: %w", err)
+				return nil, fmt.Errorf("unparsable record received from gandi2: %w", err)
 			}
 		}
 		rcs = append(rcs, rc)
