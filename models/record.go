@@ -164,6 +164,8 @@ func NewRecordConfig(origin string, name string, ttl uint32, typeNum uint16, arg
 	switch rd := rc.RDATA.(type) {
 	case dnsrdatav2.DS:
 		rc.SetTargetDS(rd.KeyTag, rd.Algorithm, rd.DigestType, rd.Digest)
+	case dnsrdatav2.RP:
+		// noop
 	case dnsrdatav2.SVCB:
 		rc.SvcPriority = rd.Priority
 		rc.SetTarget(rd.Target)
@@ -173,7 +175,7 @@ func NewRecordConfig(origin string, name string, ttl uint32, typeNum uint16, arg
 	case privatetypesrdata.URL:
 	case privatetypesrdata.URL301:
 	default:
-		return nil, fmt.Errorf("assertion failed: NewRecordConfig has not implemented type %T", rd)
+		return nil, fmt.Errorf("assertion failed: NewRecordConfig back-fill has not implemented type %T", rd)
 	}
 
 	return rc, nil
