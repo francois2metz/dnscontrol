@@ -157,7 +157,7 @@ func (rc *RecordConfig) FixUp(origin string) {
 			panic(fmt.Sprintf("RDATA FIXUP NOT IMPLEMENTED TYPE=%q", rc.Type))
 		}
 		if err != nil {
-			panic(fmt.Sprintf("BUG: FixUp: MakeSVCB failed for record %s IN %s %s: %v", rc.NameFQDN, rc.Type, rc.GetTargetField(), err))
+			panic(fmt.Sprintf("BUG: FixUp: Make%s( failed for record %s IN %s %s: %v", rc.Type, rc.NameFQDN, rc.Type, rc.GetTargetField(), err))
 		}
 	}
 

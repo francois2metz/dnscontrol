@@ -8,7 +8,9 @@ import (
 
 	dnsv2 "codeberg.org/miekg/dns"
 	dnsutilv2 "codeberg.org/miekg/dns/dnsutil"
+	dnsrdatav2 "codeberg.org/miekg/dns/rdata"
 	"github.com/DNSControl/dnscontrol/v4/pkg/privatetypes"
+	privatetypesrdata "github.com/DNSControl/dnscontrol/v4/pkg/privatetypes/rdata"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
 	"github.com/jinzhu/copier"
 	dnsv1 "github.com/miekg/dns"
@@ -158,15 +160,21 @@ func NewRecordConfig(origin string, name string, ttl uint32, typeNum uint16, arg
 	rc.RDATA = rd
 	rc.FixUp(origin)
 
-	// // Hack to back-fill legacy fields.
-	// switch typeNum {
-	// case dnsv2.TypeSVCB, dnsv2.TypeHTTPS:
-	// 	rc.SvcPriority = args[0].(uint16)
-	// 	rc.SetTarget(args[1].(string))
-	// 	rc.SvcParams = args[2].(string)
-	// default:
-	// 	// return nil, fmt.Errorf("assertion failed: NewRecordConfig has not implemented type %T", rc.RDATA)
-	// }
+	// Hack to back-fill legacy fields.
+	switch rd := rc.RDATA.(type) {
+	case dnsrdatav2.SVCB:
+		// rc.SvcPriority = rd.(dnsrdatav2.SVCB).Priority
+		// rc.SetTarget(rd.(dnsrdatav2.SVCB).Target)
+		// rc.SvcParams = svcbv2ValueToString(rd.(dnsrdatav2.SVCB).Value)
+		rc.SvcPriority = rd.Priority
+		rc.SetTarget(rd.Target)
+		rc.SvcParams = svcbv2ValueToString(rd.Value)
+	case dnsrdatav2.TLSA:
+	case privatetypesrdata.URL:
+	case privatetypesrdata.URL301:
+	default:
+		return nil, fmt.Errorf("assertion failed: NewRecordConfig has not implemented type %T", rd)
+	}
 
 	return rc, nil
 }
@@ -592,20 +600,40 @@ func (rc *RecordConfig) Key() RecordKey {
 	return RecordKey{rc.NameFQDN, t}
 }
 
+// func (rc *RecordConfig) GetSVCBValueV2() []svcbv2.Pair {
+// 	switch v := rc.RDATA.(type) {
+// 	case *dnsrdatav2.SVCB:
+// 		return v.Value
+// 	default:
+// 		panic(fmt.Sprintf("GetSVCBValueV2 failed. Unknown rdata type: %T", rc.RDATA))
+// 	}
+// 	//return rc.RDATA.(*dnsrdatav2.SVCB).Value
+
+// 	return nil
+// }
+
 // GetSVCBValue returns the SVCB Key/Values as a list of Key/Values.
 // Used to construct dnsv.RR of type SVCB or HTTPS. (This is legacy code that should go away eventualy).
+// func (rc *RecordConfig) GetSVCBValue() []dnsv1.SVCBKeyValue {
 func (rc *RecordConfig) GetSVCBValue() []dnsv1.SVCBKeyValue {
 	// if !strings.Contains(rc.SvcParams, "IGNORE+DNSCONTROL") {
 	// 	rc.SvcParams = strings.ReplaceAll(rc.SvcParams, "ech=IGNORE", "ech=IGNORE+DNSCONTROL+++")
 	// }
-	if strings.Contains(rc.SvcParams, "IGNORE") {
-		p := rc.SvcParams
-		p = strings.ReplaceAll(" "+p+" ", " ech=IGNORE ", " ech=1000 ")
-		p = strings.ReplaceAll(" "+p+" ", ` ech="IGNORE" `, " ech=1000 ")
-		rc.SvcParams = strings.TrimSpace(p)
-	}
+	// if strings.Contains(rc.SvcParams, "IGNORE") {
+	// 	p := rc.SvcParams
+	// 	p = strings.ReplaceAll(" "+p+" ", " ech=IGNORE ", " ech=1000 ")
+	// 	p = strings.ReplaceAll(" "+p+" ", ` ech="IGNORE" `, " ech=1000 ")
+	// 	rc.SvcParams = strings.TrimSpace(p)
+	// }
 
-	record, err := dnsv1.NewRR(fmt.Sprintf("%s %s %d %s %s", rc.NameFQDN, rc.Type, rc.SvcPriority, rc.target, rc.SvcParams))
+	var s string
+	if rc.RDATA != nil {
+		s = fmt.Sprintf("%s %s %s", rc.NameFQDN, rc.Type, rc.RDATA.String())
+	} else {
+		s = fmt.Sprintf("%s %s %d %s %s", rc.NameFQDN, rc.Type, rc.SvcPriority, rc.target, rc.SvcParams)
+	}
+	fmt.Printf("DEBUG: GetSVCBValue: s=%q\n", s)
+	record, err := dnsv1.NewRR(s)
 	if err != nil {
 		log.Fatalf("could not parse SVCB record: %s", err)
 	}
@@ -615,6 +643,7 @@ func (rc *RecordConfig) GetSVCBValue() []dnsv1.SVCBKeyValue {
 	case *dnsv1.SVCB:
 		return r.Value
 	}
+
 	return nil
 }
 

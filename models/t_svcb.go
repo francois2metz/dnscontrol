@@ -52,7 +52,13 @@ func (rc *RecordConfig) SetTargetSVCB(priority uint16, target string, params []d
 		return fmt.Errorf("failed to create RDATA for SVCB record: %w", err)
 	}
 	rc.RDATA = rd
-	rc.FixUp(".")
+	rc.FixUp("")
+
+	// // HACK: Back-port the
+	// rc.RDATA = rd
+	// rc.SvcPriority = priority
+	// rc.SetTarget(target)
+	// rc.SvcParams = params
 
 	// if rc.SvcPriority == 0 {
 	// 	rc.RDATA = dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: rc.GetTargetField()}
@@ -121,6 +127,22 @@ func (rc *RecordConfig) SetTargetSVCBString(origin, contents string) error {
 	rc.FixUp(".")
 
 	return nil
+}
+
+// svcbv2ValueToString converts a SVCB value list to a string.
+// TODO(tlim): THIS NEEDS A UNIT TEST!
+func svcbv2ValueToString(pairs []svcbv2.Pair) string {
+	var sb strings.Builder
+	for i, p := range pairs {
+		if i > 0 {
+			sb.WriteString(" ")
+		}
+		knum := svcbv2.PairToKey(p)
+		k := svcbv2.KeyToString(knum)
+		sb.WriteString(fmt.Sprintf("%s=%s", k, p.String()))
+		//fmt.Printf("%d %s %s\n", i, k, p.String())
+	}
+	return sb.String()
 }
 
 // convertSVCBv1v2 converts dnsv1's struct to dnsv2's struct. It hasn't been tested extensively.
