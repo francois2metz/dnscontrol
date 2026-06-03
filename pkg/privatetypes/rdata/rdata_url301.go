@@ -12,6 +12,7 @@ type URL301 struct {
 	Location string
 
 	// Pornbun-specific fields:
+	//PorkbunType        string // TODO(tlim): This should be uint8 (301, 302, etc)
 	PorkbunIncludePath bool `json:"porkbun_include_path"`
 	PorkbunWildCard    bool `json:"porkbun_wildcard"`
 }

@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"strings"
 
 	dnsv2 "codeberg.org/miekg/dns"
 	dnsrdatav2 "codeberg.org/miekg/dns/rdata"
@@ -75,9 +74,10 @@ func MakeCNAME(origin string, args ...any) (dnsv2.RDATA, error) {
 	}
 	return dnsrdatav2.CNAME{Target: mustbe.TargetHost(origin, args[0])}, nil
 }
-func MakeCFWORKERROUTE(when, then string) (dnsv2.RDATA, error) {
-	return privatetypesrdata.CFWORKERROUTE{When: mustbe.RawString(when), Then: mustbe.RawString(then)}, nil
-}
+
+// func MakeCFWORKERROUTE(origin string, when, then string) (dnsv2.RDATA, error) {
+// 	return privatetypesrdata.CFWORKERROUTE{When: mustbe.RawString(when), Then: mustbe.RawString(then)}, nil
+// }
 
 func MakeDHCID(origin string, args ...any) (dnsv2.RDATA, error) {
 	if len(args) != 1 {
@@ -92,10 +92,16 @@ func MakeDNAME(origin string, args ...any) (dnsv2.RDATA, error) {
 	return dnsrdatav2.DNAME{Target: mustbe.TargetHost(origin, args[0])}, nil
 }
 func MakeDNSKEY(origin string, args ...any) (dnsv2.RDATA, error) {
-	if len(args) != 5 {
-		return nil, fmt.Errorf("MakeDNSKEY expects exactly 5 arguments, got %d: %+v", len(args), args)
+	if len(args) != 4 {
+		return nil, fmt.Errorf("MakeDNSKEY expects exactly 4 arguments, got %d: %+v", len(args), args)
 	}
-	return dnsrdatav2.DNSKEY{Flags: mustbe.Uint16(args[0]), Protocol: mustbe.Uint8(args[1]), Algorithm: mustbe.Uint8(args[2]), PublicKey: mustbe.RawString(args[3])}, nil
+	return dnsrdatav2.DNSKEY{
+		Flags:     mustbe.Uint16(args[0]),
+		Protocol:  mustbe.Uint8(args[1]),
+		Algorithm: mustbe.Uint8(args[2]),
+		PublicKey: mustbe.RawString(args[3]),
+		//Tag:       mustbe.Uint16(args[4]),
+	}, nil
 }
 
 func MakeDS(origin string, args ...any) (dnsv2.RDATA, error) {
@@ -195,10 +201,18 @@ func MakeSMIMEA(origin string, args ...any) (dnsv2.RDATA, error) {
 }
 
 func MakeSOA(origin string, args ...any) (dnsv2.RDATA, error) {
-	if len(args) != 9 {
+	if len(args) != 7 {
 		return nil, fmt.Errorf("MakeSOA expects exactly 9 arguments, got %d: %+v", len(args), args)
 	}
-	return dnsrdatav2.SOA{Ns: mustbe.TargetHost(origin, args[1]), Mbox: mustbe.TargetHost(origin, args[2]), Serial: mustbe.Uint32(args[3]), Refresh: mustbe.Uint32(args[4]), Retry: mustbe.Uint32(args[5]), Expire: mustbe.Uint32(args[6]), Minttl: mustbe.Uint32(args[7])}, nil
+	return dnsrdatav2.SOA{
+		Ns:      mustbe.TargetHost(origin, args[0]),
+		Mbox:    mustbe.RawString(args[1]), // FIXME(tlim): Should be mustbe.SoaMbox()
+		Serial:  mustbe.Uint32(args[2]),
+		Refresh: mustbe.Uint32(args[3]),
+		Retry:   mustbe.Uint32(args[4]),
+		Expire:  mustbe.Uint32(args[5]),
+		Minttl:  mustbe.Uint32(args[6]),
+	}, nil
 }
 
 func MakeSRV(origin string, args ...any) (dnsv2.RDATA, error) {
@@ -239,11 +253,11 @@ func MakeSVCB(origin string, args ...any) (dnsv2.RDATA, error) {
 	case []svcbv2.Pair:
 		return dnsrdatav2.SVCB{Priority: mustbe.Uint16(priority), Target: mustbe.TargetHost(origin, target), Value: v}, nil
 	case string:
-		fmt.Printf("DEBUG MakeSVCB: Before conversion params=%q\n", v)
-		v = strings.ReplaceAll(" "+v+" ", ` ech=IGNORE `, ` ech=1000`)
-		v = strings.ReplaceAll(v, `  `, ` `) // Collapse 2 spaces into 1  (This may be unneeded but doesn't hurt)
-		v = strings.TrimSpace(v)
-		fmt.Printf("DEBUG MakeSVCB: After conversion params=%q\n", v)
+		// fmt.Printf("DEBUG MakeSVCB: Before conversion params=%q\n", v)
+		// v = strings.ReplaceAll(" "+v+" ", ` ech=IGNORE `, ` ech=1000`)
+		// v = strings.ReplaceAll(v, `  `, ` `) // Collapse 2 spaces into 1  (This may be unneeded but doesn't hurt)
+		// v = strings.TrimSpace(v)
+		// fmt.Printf("DEBUG MakeSVCB: After conversion params=%q\n", v)
 		// ech=1000 is a special value that indicates "use the ech value from
 		// the existing zone." This is not an RFC standard, just something we do
 		// in DNSControl. There is a very small chance that someone will
@@ -251,7 +265,7 @@ func MakeSVCB(origin string, args ...any) (dnsv2.RDATA, error) {
 		// my hat.
 
 		line := fmt.Sprintf("%d %s %s", mustbe.Uint16(priority), mustbe.TargetHost(origin, target), v)
-		fmt.Printf("DEBUG MakeSVCB: Creating RDATA with line=%q\n", line)
+		// fmt.Printf("DEBUG MakeSVCB: Creating RDATA with line=%q\n", line)
 		return dnsv2.NewData(dnsv2.TypeHTTPS, line)
 		// NB(tlim): It's an abomination to construct this string just to parse it but dnsv2 doesn't expose the parser in a way to do a partial line.
 	}
@@ -273,16 +287,16 @@ func MakeTXT(origin string, args ...any) (dnsv2.RDATA, error) {
 	return dnsrdatav2.TXT{Txt: mustbe.Txts(args[0])}, nil
 }
 
-func MakeURL(origin string, args ...any) (dnsv2.RDATA, error) {
-	if len(args) != 1 {
-		return nil, fmt.Errorf("MakeURL expects exactly 1 argument, got %d: %+v", len(args), args)
-	}
-	return privatetypesrdata.URL{Location: mustbe.RawString(args[0])}, nil
-}
+// func MakeURL(origin string, args ...any) (dnsv2.RDATA, error) {
+// 	if len(args) != 1 {
+// 		return nil, fmt.Errorf("MakeURL expects exactly 1 argument, got %d: %+v", len(args), args)
+// 	}
+// 	return privatetypesrdata.URL{Location: mustbe.RawString(args[0])}, nil
+// }
 
-func MakeURL301(origin string, args ...any) (dnsv2.RDATA, error) {
-	if len(args) != 1 {
-		return nil, fmt.Errorf("MakeURL301 expects exactly 1 argument, got %d: %+v", len(args), args)
-	}
-	return privatetypesrdata.URL{Location: mustbe.RawString(args[0])}, nil
-}
+// func MakeURL301(origin string, args ...any) (dnsv2.RDATA, error) {
+// 	if len(args) != 1 {
+// 		return nil, fmt.Errorf("MakeURL301 expects exactly 1 argument, got %d: %+v", len(args), args)
+// 	}
+// 	return privatetypesrdata.URL{Location: mustbe.RawString(args[0])}, nil
+// }

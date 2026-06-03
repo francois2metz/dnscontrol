@@ -12,6 +12,7 @@ type URL struct {
 	Location string
 
 	// Pornbun-specific fields:
+	//PorkbunType        string // TODO(tlim): This should be uint8 (301, 302, etc)
 	PorkbunIncludePath bool
 	PorkbunWildCard    bool
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/DNSControl/dnscontrol/v4/models"
 	"github.com/DNSControl/dnscontrol/v4/pkg/domaintags"
 	"github.com/DNSControl/dnscontrol/v4/pkg/nameservers"
+	"github.com/DNSControl/dnscontrol/v4/pkg/privatetypes"
 	"github.com/DNSControl/dnscontrol/v4/pkg/providers"
 	"github.com/DNSControl/dnscontrol/v4/pkg/rtypecontrol"
 	"github.com/DNSControl/dnscontrol/v4/pkg/transform"
@@ -34,6 +35,9 @@ var (
 
 // Global variable to hold the current DomainConfig	for use in FromRaw calls.
 var globalDCN *domaintags.DomainNameVarieties
+
+// Default TTL used in integration tests
+var defaultTTL = uint32(300)
 
 // Helper constants/funcs for the HEDNS Dynamic DNS testing:
 
@@ -527,7 +531,7 @@ func dname(name, target string) *models.RecordConfig {
 func ds(name string, keyTag uint16, algorithm, digestType uint8, digest string) *models.RecordConfig {
 	rec, err := rtypecontrol.NewRecordConfigFromRaw(rtypecontrol.FromRawOpts{
 		Type: "DS",
-		TTL:  300,
+		TTL:  defaultTTL,
 		Args: []any{name, keyTag, algorithm, digestType, digest},
 		DCN:  globalDCN,
 	})
@@ -548,7 +552,7 @@ func https(name string, priority uint16, target string, params string) *models.R
 	// r.SvcParams = params
 	// r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
 
-	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, 0, dnsv2.TypeHTTPS, priority, target, params)
+	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, defaultTTL, dnsv2.TypeHTTPS, priority, target, params)
 	if err != nil {
 		panic(err)
 	}
@@ -594,7 +598,7 @@ func makeRecAndFix(name, target, typ string) *models.RecordConfig {
 func makeRec(name, target, typ string) *models.RecordConfig {
 	r := &models.RecordConfig{
 		Type: typ,
-		TTL:  300,
+		TTL:  defaultTTL,
 	}
 	SetLabel(r, name, "**current-domain**.")
 	r.MustSetTarget(target)
@@ -660,7 +664,7 @@ func r53weighted(name, target, rtype string, weight int, setID string) *models.R
 func rp(name string, m, t string) *models.RecordConfig {
 	rec, err := rtypecontrol.NewRecordConfigFromRaw(rtypecontrol.FromRawOpts{
 		Type: "RP",
-		TTL:  300,
+		TTL:  defaultTTL,
 		Args: []any{name, m, t},
 		DCN:  globalDCN,
 	})
@@ -724,7 +728,7 @@ func svcb(name string, priority uint16, target string, params string) *models.Re
 	// //r.ComparableV3 = r.RDATA.String()
 	// r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
 	// return r
-	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, 0, dnsv2.TypeSVCB, priority, target, params)
+	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, defaultTTL, dnsv2.TypeSVCB, priority, target, params)
 	if err != nil {
 		panic(err)
 	}
@@ -843,7 +847,7 @@ func tlsa(name string, usage, selector, matchingtype uint8, target string) *mode
 	// r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
 	// return r
 
-	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, 0, dnsv2.TypeTLSA, usage, selector, matchingtype, target)
+	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, defaultTTL, dnsv2.TypeTLSA, usage, selector, matchingtype, target)
 	if err != nil {
 		panic(err)
 	}
@@ -862,11 +866,19 @@ func porkbunUrlfwd(name, target, t, includePath, wildcard string) *models.Record
 }
 
 func url(name, target string) *models.RecordConfig {
-	return makeRecAndFix(name, target, "URL")
+	rc, err := models.NewRecordConfig(globalDCN.NameASCII, name, defaultTTL, privatetypes.TypeURL, target, false, false)
+	if err != nil {
+		panic(err)
+	}
+	return rc
 }
 
 func url301(name, target string) *models.RecordConfig {
-	return makeRecAndFix(name, target, "URL301")
+	rc, err := models.NewRecordConfig(globalDCN.NameASCII, name, defaultTTL, privatetypes.TypeURL301, target, false, false)
+	if err != nil {
+		panic(err)
+	}
+	return rc
 }
 
 func frame(name, target string) *models.RecordConfig {

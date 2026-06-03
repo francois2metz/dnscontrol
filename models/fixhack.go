@@ -21,6 +21,7 @@ func (rc *RecordConfig) FixUp(origin string) {
 
 	// TypeNum:
 	if rc.TypeNum == 0 && rc.Type != "ALIAS" {
+		var err error
 		tn, err := dnsutilv2.StringToType(rc.Type)
 		if err != nil {
 			panic(fmt.Sprintf("BUG: FixUp: Unknown type %s", rc.Type))
@@ -31,6 +32,7 @@ func (rc *RecordConfig) FixUp(origin string) {
 	// Populate .RDATA if needed:
 	if rc.RDATA == nil {
 
+		var err error
 		switch rc.Type {
 
 		// Incomplete
@@ -54,37 +56,37 @@ func (rc *RecordConfig) FixUp(origin string) {
 			rc.RDATA = privatetypesrdata.BUNNYDNSRDR{}
 
 		case "A":
-			rc.RDATA, _ = MakeA(origin, rc.GetTargetIP())
+			rc.RDATA, err = MakeA(origin, rc.GetTargetIP())
 		case "ALIAS":
-			rc.RDATA, _ = MakeALIAS(origin, rc.GetTargetField())
+			rc.RDATA, err = privatetypesrdata.MakeALIAS(origin, rc.GetTargetField())
 		case "AAAA":
-			rc.RDATA, _ = MakeAAAA(origin, rc.GetTargetIP())
+			rc.RDATA, err = MakeAAAA(origin, rc.GetTargetIP())
 		case "ADGUARDHOME_A_PASSTHROUGH":
-			rc.RDATA, _ = privatetypesrdata.MakeADGUARDHOMEAPASSTHROUGH(origin)
+			rc.RDATA, err = privatetypesrdata.MakeADGUARDHOMEAPASSTHROUGH(origin)
 		case "ADGUARDHOME_AAAA_PASSTHROUGH":
-			rc.RDATA, _ = privatetypesrdata.MakeADGUARDHOMEAAAAPASSTHROUGH(origin)
+			rc.RDATA, err = privatetypesrdata.MakeADGUARDHOMEAAAAPASSTHROUGH(origin)
 		case "AZURE_ALIAS":
-			rc.RDATA, _ = privatetypesrdata.MakeAZUREALIAS(rc.AzureAlias["type"], rc.GetTargetField())
+			rc.RDATA, err = privatetypesrdata.MakeAZUREALIAS(origin, rc.AzureAlias["type"], rc.GetTargetField())
 
 		case "CAA":
-			rc.RDATA, _ = MakeCAA(origin, rc.CaaFlag, rc.CaaTag, rc.GetTargetField())
+			rc.RDATA, err = MakeCAA(origin, rc.CaaFlag, rc.CaaTag, rc.GetTargetField())
 		case "CNAME":
-			rc.RDATA, _ = MakeCNAME(origin, rc.GetTargetField())
+			rc.RDATA, err = MakeCNAME(origin, rc.GetTargetField())
 		case "CF_WORKER_ROUTE":
 			part := strings.SplitN(rc.GetTargetField(), ",", 2)
-			rc.RDATA, _ = MakeCFWORKERROUTE(part[0], part[1])
+			rc.RDATA, err = privatetypesrdata.MakeCFWORKERROUTE(origin, part[0], part[1])
 
 		case "DHCID":
-			rc.RDATA, _ = MakeDHCID(origin, rc.GetTargetField())
+			rc.RDATA, err = MakeDHCID(origin, rc.GetTargetField())
 		case "DNAME":
-			rc.RDATA, _ = MakeDNAME(origin, rc.GetTargetField())
+			rc.RDATA, err = MakeDNAME(origin, rc.GetTargetField())
 		case "DNSKEY":
-			rc.RDATA, _ = MakeDNSKEY(origin, rc.DnskeyFlags, rc.DnskeyProtocol, rc.DnskeyAlgorithm, rc.DnskeyPublicKey)
+			rc.RDATA, err = MakeDNSKEY(origin, rc.DnskeyFlags, rc.DnskeyProtocol, rc.DnskeyAlgorithm, rc.DnskeyPublicKey)
 		case "DS":
-			rc.RDATA, _ = MakeDS(origin, rc.DsKeyTag, rc.DsAlgorithm, rc.DsDigestType, rc.GetTargetField())
+			rc.RDATA, err = MakeDS(origin, rc.DsKeyTag, rc.DsAlgorithm, rc.DsDigestType, rc.GetTargetField())
 
 		case "FRAME":
-			rc.RDATA, _ = privatetypesrdata.MakeFRAME(origin, rc.GetTargetField())
+			rc.RDATA, err = privatetypesrdata.MakeFRAME(origin, rc.GetTargetField())
 
 		case "HTTPS":
 			rd, err := MakeHTTPS(origin, rc.SvcPriority, rc.GetTargetField(), rc.SvcParams)
@@ -94,61 +96,68 @@ func (rc *RecordConfig) FixUp(origin string) {
 			rc.RDATA = rd
 
 		case "LOC":
-			rc.RDATA, _ = MakeLOC(origin, rc.LocVersion, rc.LocSize, rc.LocHorizPre, rc.LocVertPre, rc.LocLatitude, rc.LocLongitude, rc.LocAltitude)
+			rc.RDATA, err = MakeLOC(origin, rc.LocVersion, rc.LocSize, rc.LocHorizPre, rc.LocVertPre, rc.LocLatitude, rc.LocLongitude, rc.LocAltitude)
 
 		case "MIKROTIK_FWD":
-			rc.RDATA, _ = privatetypesrdata.MakeMIKROTIKFWD(origin, rc.GetTargetField())
+			rc.RDATA, err = privatetypesrdata.MakeMIKROTIKFWD(origin, rc.GetTargetField())
 		case "MIKROTIK_NXDOMAIN":
-			rc.RDATA, _ = privatetypesrdata.MakeMIKROTIKNXDOMAIN(origin)
+			rc.RDATA, err = privatetypesrdata.MakeMIKROTIKNXDOMAIN(origin)
 		case "MX":
-			rc.RDATA, _ = MakeMX(origin, rc.MxPreference, rc.GetTargetField())
+			rc.RDATA, err = MakeMX(origin, rc.MxPreference, rc.GetTargetField())
 
 		case "NS":
-			rc.RDATA, _ = MakeNS(origin, rc.GetTargetField())
+			rc.RDATA, err = MakeNS(origin, rc.GetTargetField())
 		case "NAPTR":
-			rc.RDATA, _ = MakeNAPTR(origin, rc.NaptrOrder, rc.NaptrPreference, rc.NaptrFlags, rc.NaptrService, rc.NaptrRegexp, rc.GetTargetField())
+			rc.RDATA, err = MakeNAPTR(origin, rc.NaptrOrder, rc.NaptrPreference, rc.NaptrFlags, rc.NaptrService, rc.NaptrRegexp, rc.GetTargetField())
 
 		case "OPENPGPKEY":
-			rc.RDATA, _ = MakeOPENPGPKEY(origin, rc.GetTargetField())
+			rc.RDATA, err = MakeOPENPGPKEY(origin, rc.GetTargetField())
 
 		case "PORKBUN_URLFWD":
-			rc.RDATA, _ = privatetypesrdata.MakePORKBUNURLFWD(origin, rc.GetTargetField())
+			rc.RDATA, err = privatetypesrdata.MakePORKBUNURLFWD(origin, rc.GetTargetField())
 
 		case "PTR":
-			rc.RDATA, _ = MakePTR(origin, rc.GetTargetField())
+			rc.RDATA, err = MakePTR(origin, rc.GetTargetField())
 
 		case "RP":
-			rc.RDATA, _ = MakeRP(origin, rc.F.(dnsv1.RP).Mbox, rc.F.(dnsv1.RP).Txt)
+			rc.RDATA, err = MakeRP(origin, rc.F.(dnsv1.RP).Mbox, rc.F.(dnsv1.RP).Txt)
 		case "R53_ALIAS":
-			rc.RDATA, _ = privatetypesrdata.MakeR53ALIAS(origin, rc.R53Alias["type"], rc.GetTargetField(), rc.R53Alias["zone_id"], rc.R53Alias["evaluate_target_health"])
+			rc.RDATA, err = privatetypesrdata.MakeR53ALIAS(origin, rc.R53Alias["type"], rc.GetTargetField(), rc.R53Alias["zone_id"], rc.R53Alias["evaluate_target_health"])
 
 		case "SMIMEA":
-			rc.RDATA, _ = MakeSMIMEA(origin, rc.SmimeaUsage, rc.SmimeaSelector, rc.SmimeaMatchingType, rc.GetTargetField())
+			rc.RDATA, err = MakeSMIMEA(origin, rc.SmimeaUsage, rc.SmimeaSelector, rc.SmimeaMatchingType, rc.GetTargetField())
 		case "SOA":
-			rc.RDATA, _ = MakeSOA(origin, rc.GetTargetField(), rc.SoaMbox, rc.SoaSerial, rc.SoaRefresh, rc.SoaRetry, rc.SoaExpire, rc.SoaMinttl)
+			rc.RDATA, err = MakeSOA(origin, rc.GetTargetField(), rc.SoaMbox, rc.SoaSerial, rc.SoaRefresh, rc.SoaRetry, rc.SoaExpire, rc.SoaMinttl)
 		case "SRV":
-			rc.RDATA, _ = MakeSRV(origin, rc.SrvPriority, rc.SrvWeight, rc.SrvPort, rc.GetTargetField())
+			rc.RDATA, err = MakeSRV(origin, rc.SrvPriority, rc.SrvWeight, rc.SrvPort, rc.GetTargetField())
 		case "SSHFP":
-			rc.RDATA, _ = MakeSSHFP(origin, rc.SshfpAlgorithm, rc.SshfpFingerprint, rc.GetTargetField())
+			rc.RDATA, err = MakeSSHFP(origin, rc.SshfpAlgorithm, rc.SshfpFingerprint, rc.GetTargetField())
 		case "SVCB":
-			rd, err := MakeSVCB(origin, rc.SvcPriority, rc.GetTargetField(), rc.SvcParams)
-			if err != nil {
-				panic(fmt.Sprintf("BUG: FixUp: MakeSVCB failed for record %s IN %s %s: %v", rc.NameFQDN, rc.Type, rc.GetTargetField(), err))
-			}
-			rc.RDATA = rd
+			rc.RDATA, err = MakeSVCB(origin, rc.SvcPriority, rc.GetTargetField(), rc.SvcParams)
+			// if err != nil {
+			// 	panic(fmt.Sprintf("BUG: FixUp: MakeSVCB failed for record %s IN %s %s: %v", rc.NameFQDN, rc.Type, rc.GetTargetField(), err))
+			// }
+			// rc.RDATA = rd
 
 		case "TLSA":
-			rc.RDATA, _ = MakeTLSA(origin, rc.TlsaUsage, rc.TlsaSelector, rc.TlsaMatchingType, rc.GetTargetField())
+			rc.RDATA, err = MakeTLSA(origin, rc.TlsaUsage, rc.TlsaSelector, rc.TlsaMatchingType, rc.GetTargetField())
 		case "TXT":
-			rc.RDATA, _ = MakeTXT(origin, rc.GetTargetField())
+			rc.RDATA, err = MakeTXT(origin, rc.GetTargetField())
 
 		case "URL":
-			rc.RDATA, _ = privatetypesrdata.MakeURL(origin, rc.GetTargetField())
+			rc.RDATA, err = privatetypesrdata.MakeURL(origin,
+				rc.GetTargetField(),
+				rc.Metadata["includePath"],
+				rc.Metadata["wildcard"],
+			)
 		case "URL301":
-			rc.RDATA, _ = privatetypesrdata.MakeURL(origin, rc.GetTargetField())
+			rc.RDATA, err = privatetypesrdata.MakeURL(origin, rc.GetTargetField())
 
 		default:
 			panic(fmt.Sprintf("RDATA FIXUP NOT IMPLEMENTED TYPE=%q", rc.Type))
+		}
+		if err != nil {
+			panic(fmt.Sprintf("BUG: FixUp: MakeSVCB failed for record %s IN %s %s: %v", rc.NameFQDN, rc.Type, rc.GetTargetField(), err))
 		}
 	}
 

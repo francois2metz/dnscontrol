@@ -146,9 +146,10 @@ func NewRecordConfig(origin string, name string, ttl uint32, typeNum uint16, arg
 	rc := &RecordConfig{
 		TypeNum: typeNum,
 		Type:    dnsutilv2.TypeToString(typeNum),
-		Name:    name,
-		TTL:     ttl,
+		// Name:    name,
+		TTL: ttl,
 	}
+	rc.SetLabel(name, origin)
 
 	rd, err := privatetypes.TypeToMakeRDATA[typeNum](origin, args...)
 	if err != nil {

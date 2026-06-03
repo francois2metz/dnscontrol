@@ -1,8 +1,6 @@
 package privatetypesrdata
 
 import (
-	"fmt"
-
 	dnsv2 "codeberg.org/miekg/dns"
 )
 
@@ -19,5 +17,5 @@ func (rd PORKBUNURLFWD) String() string {
 }
 
 func MakePORKBUNURLFWD(origin string, args ...any) (dnsv2.RDATA, error) {
-	return PORKBUNURLFWD{}, fmt.Errorf("MakePORKBUN_URLFWD() should not be used")
+	return PORKBUNURLFWD{}, nil
 }
