@@ -50,6 +50,14 @@ func Register(codepoint uint16, typeName string, newFn func() dnsv2.RR, makeFn f
 	}
 	dnsv2.StringToType[typeName] = codepoint
 
+	RegisterMaker(codepoint, makeFn)
+}
+
+// RegisterMaker registers just the Make*() function for an rtype. This is needed for non-private types.
+func RegisterMaker(codepoint uint16, makeFn func(origin string, args ...any) (dnsv2.RDATA, error)) {
+
+	typeName := dnsv2.TypeToString[codepoint]
+
 	// typenum -> func(args ...any) (RDATA, error) i.e. a function that creates an RDATA struct for the given code point, with fields filled from the given args.
 	if s, exists := TypeToMakeRDATA[codepoint]; exists {
 		panic(fmt.Sprintf("TypeToMakeRDATA[%d] a.k.a. %s already in use by %T", codepoint, typeName, s))

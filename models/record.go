@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	dnsv2 "codeberg.org/miekg/dns"
+	dnsutilv2 "codeberg.org/miekg/dns/dnsutil"
+	"github.com/DNSControl/dnscontrol/v4/pkg/privatetypes"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
 	"github.com/jinzhu/copier"
 	dnsv1 "github.com/miekg/dns"
@@ -137,6 +139,35 @@ type RecordConfig struct {
 	AzureAlias         map[string]string `json:"azure_alias,omitempty"`
 	AnswerType         string            `json:"answer_type,omitempty"`
 	UnknownTypeName    string            `json:"unknown_type_name,omitempty"`
+}
+
+func NewRecordConfig(origin string, name string, ttl uint32, typeNum uint16, args ...any) (*RecordConfig, error) {
+
+	rc := &RecordConfig{
+		TypeNum: typeNum,
+		Type:    dnsutilv2.TypeToString(typeNum),
+		Name:    name,
+		TTL:     ttl,
+	}
+
+	rd, err := privatetypes.TypeToMakeRDATA[typeNum](origin, args...)
+	if err != nil {
+		log.Fatalf("BUG: Failed to create RDATA for type %d: %v", typeNum, err)
+	}
+	rc.RDATA = rd
+	rc.FixUp(origin)
+
+	// // Hack to back-fill legacy fields.
+	// switch typeNum {
+	// case dnsv2.TypeSVCB, dnsv2.TypeHTTPS:
+	// 	rc.SvcPriority = args[0].(uint16)
+	// 	rc.SetTarget(args[1].(string))
+	// 	rc.SvcParams = args[2].(string)
+	// default:
+	// 	// return nil, fmt.Errorf("assertion failed: NewRecordConfig has not implemented type %T", rc.RDATA)
+	// }
+
+	return rc, nil
 }
 
 // MarshalJSON marshals RecordConfig.

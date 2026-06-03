@@ -54,11 +54,11 @@ func (rc *RecordConfig) FixUp(origin string) {
 			rc.RDATA = privatetypesrdata.BUNNYDNSRDR{}
 
 		case "A":
-			rc.RDATA, _ = MakeA(rc.GetTargetIP())
+			rc.RDATA, _ = MakeA(origin, rc.GetTargetIP())
 		case "ALIAS":
 			rc.RDATA, _ = MakeALIAS(origin, rc.GetTargetField())
 		case "AAAA":
-			rc.RDATA, _ = MakeAAAA(rc.GetTargetIP())
+			rc.RDATA, _ = MakeAAAA(origin, rc.GetTargetIP())
 		case "ADGUARDHOME_A_PASSTHROUGH":
 			rc.RDATA, _ = privatetypesrdata.MakeADGUARDHOMEAPASSTHROUGH(origin)
 		case "ADGUARDHOME_AAAA_PASSTHROUGH":
@@ -87,7 +87,11 @@ func (rc *RecordConfig) FixUp(origin string) {
 			rc.RDATA, _ = privatetypesrdata.MakeFRAME(origin, rc.GetTargetField())
 
 		case "HTTPS":
-			rc.RDATA, _ = MakeHTTPS(origin, rc.SvcPriority, rc.GetTargetField(), rc.SvcParams)
+			rd, err := MakeHTTPS(origin, rc.SvcPriority, rc.GetTargetField(), rc.SvcParams)
+			if err != nil {
+				panic(fmt.Sprintf("BUG: FixUp: MakeHTTPS failed for record %s IN %s %s: %v", rc.NameFQDN, rc.Type, rc.GetTargetField(), err))
+			}
+			rc.RDATA = rd
 
 		case "LOC":
 			rc.RDATA, _ = MakeLOC(origin, rc.LocVersion, rc.LocSize, rc.LocHorizPre, rc.LocVertPre, rc.LocLatitude, rc.LocLongitude, rc.LocAltitude)
@@ -127,7 +131,11 @@ func (rc *RecordConfig) FixUp(origin string) {
 		case "SSHFP":
 			rc.RDATA, _ = MakeSSHFP(origin, rc.SshfpAlgorithm, rc.SshfpFingerprint, rc.GetTargetField())
 		case "SVCB":
-			rc.RDATA, _ = MakeSVCB(origin, rc.SvcPriority, rc.GetTargetField(), rc.SvcParams)
+			rd, err := MakeSVCB(origin, rc.SvcPriority, rc.GetTargetField(), rc.SvcParams)
+			if err != nil {
+				panic(fmt.Sprintf("BUG: FixUp: MakeSVCB failed for record %s IN %s %s: %v", rc.NameFQDN, rc.Type, rc.GetTargetField(), err))
+			}
+			rc.RDATA = rd
 
 		case "TLSA":
 			rc.RDATA, _ = MakeTLSA(origin, rc.TlsaUsage, rc.TlsaSelector, rc.TlsaMatchingType, rc.GetTargetField())
@@ -153,8 +161,17 @@ func (rc *RecordConfig) FixUp(origin string) {
 			// would prevent correct diffing. List it as "X" so-as it stands out
 			// in debug output that the serial is intentionally excluded.
 			rc.ComparableV3 = fmt.Sprintf("%s %s X %d %d %d %d", rc.GetTargetField(), rc.SoaMbox, rc.SoaRefresh, rc.SoaRetry, rc.SoaExpire, rc.SoaMinttl)
+		// case "HTTPS", "SVCB":
+		// 	x := rc.RDATA.String()
+		// 	x = strings.TrimSpace(x)
+		// 	rc.ComparableV3 = x
 		default:
-			rc.ComparableV3 = strings.TrimSpace(rc.RDATA.String())
+			if rc.RDATA == nil {
+				panic(fmt.Sprintf("BUG: FixUp: .RDATA is nil for type %s", rc.Type))
+			}
+			x := rc.RDATA.String()
+			x = strings.TrimSpace(x)
+			rc.ComparableV3 = x
 		}
 
 		// Note to self: RDATA.String() sometimes leaves a trailing space.  File a bug.

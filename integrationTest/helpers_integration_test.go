@@ -543,13 +543,15 @@ func dnskey(name string, flags uint16, protocol, algorithm uint8, publicKey stri
 }
 
 func https(name string, priority uint16, target string, params string) *models.RecordConfig {
-	r := makeRec(name, target, "HTTPS")
-	r.SvcPriority = priority
-	r.SvcParams = params
+	// r := makeRec(name, target, "HTTPS")
+	// r.SvcPriority = priority
+	// r.SvcParams = params
+	// r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
 
-	r.RDATA, _ = models.MakeHTTPS(globalDCN.NameASCII, priority, target, params)
-
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, 0, dnsv2.TypeHTTPS, priority, target, params)
+	if err != nil {
+		panic(err)
+	}
 	return r
 }
 
@@ -708,20 +710,24 @@ func sshfp(name string, algorithm uint8, fingerprint uint8, target string) *mode
 }
 
 func svcb(name string, priority uint16, target string, params string) *models.RecordConfig {
-	r := makeRec(name, target, "SVCB")
-	r.SvcPriority = priority
-	r.SvcParams = params
+	// r := makeRec(name, target, "SVCB")
+	// r.SvcPriority = priority
+	// r.SvcParams = params
 
-	// Hack to set .RDATA without importing miekg/dns in pkg/rtypecontrol/fixlegacy.go
-	rty := dnsv2.TypeSVCB
-	rrv2, err := dnsv2.NewData(rty, fmt.Sprintf("%d %s %s", priority, target, params))
+	// // Hack to set .RDATA without importing miekg/dns in pkg/rtypecontrol/fixlegacy.go
+	// rty := dnsv2.TypeSVCB
+	// rrv2, err := dnsv2.NewData(rty, fmt.Sprintf("%d %s %s", priority, target, params))
+	// if err != nil {
+	// 	panic(fmt.Sprintf("could not parse SVCB record: %s", err))
+	// }
+	// r.RDATA = rrv2
+	// //r.ComparableV3 = r.RDATA.String()
+	// r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	// return r
+	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, 0, dnsv2.TypeSVCB, priority, target, params)
 	if err != nil {
-		panic(fmt.Sprintf("could not parse SVCB record: %s", err))
+		panic(err)
 	}
-	r.RDATA = rrv2
-	//r.ComparableV3 = r.RDATA.String()
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
-
 	return r
 }
 
@@ -832,10 +838,17 @@ func ttl(r *models.RecordConfig, t uint32) *models.RecordConfig {
 }
 
 func tlsa(name string, usage, selector, matchingtype uint8, target string) *models.RecordConfig {
-	r := makeRec(name, target, "TLSA")
-	panicOnErr(r.SetTargetTLSA(usage, selector, matchingtype, target))
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	// r := makeRec(name, target, "TLSA")
+	// panicOnErr(r.SetTargetTLSA(usage, selector, matchingtype, target))
+	// r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	// return r
+
+	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, 0, dnsv2.TypeTLSA, usage, selector, matchingtype, target)
+	if err != nil {
+		panic(err)
+	}
 	return r
+
 }
 
 func porkbunUrlfwd(name, target, t, includePath, wildcard string) *models.RecordConfig {

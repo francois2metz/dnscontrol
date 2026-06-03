@@ -106,7 +106,15 @@ func NewCompareConfig(origin string, existing, desired models.Records, compFn Co
 
 	cc.addRecords(existing, true) // Must be called first so that CNAME manipulations happen in the correct order.
 
-	desired = models.ModifySVCBForComparison(existing, desired)
+	// desired = models.SVCBHydrateDesiredEchIgnore(existing, desired)
+
+	// CLUE: The problem happens even if you comment out this next line.
+	// That means that the HTTPS record is being deleted before NewCompareConfig
+	// is called, so the problem is not in the code that generates the changes,
+	// but in the code that processes the changes.  That is, the problem is in
+	// the code that generates the new desired state, not in the code that
+	// generates the list of changes.
+	models.SVCBHydrateDesiredEchIgnore(existing, desired)
 	cc.addRecords(desired, false)
 
 	cc.verifyCNAMEAssertions()

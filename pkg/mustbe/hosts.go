@@ -46,7 +46,7 @@ func TargetHost(origin string, arg any) string {
 	name = domaintags.EfficientToASCII(name)
 
 	// shorten origin to "@".
-	if name == origin+"." {
+	if origin != "" && name == origin+"." {
 		return "@"
 	}
 
@@ -55,5 +55,9 @@ func TargetHost(origin string, arg any) string {
 		return name
 	}
 
+	if origin == "" {
+		return name + "."
+
+	}
 	return name + "." + origin + "."
 }

@@ -20,15 +20,19 @@ func (rc *RecordConfig) targetCombinedSVCBRaw() string {
 
 // SetTargetSVCB sets the SVCB fields.
 func (rc *RecordConfig) SetTargetSVCB(priority uint16, target string, params []dnsv1.SVCBKeyValue) error {
+
 	rc.SvcPriority = priority
+
 	if err := rc.SetTarget(target); err != nil {
 		return err
 	}
+
 	paramsStr := []string{}
 	for _, kv := range params {
 		paramsStr = append(paramsStr, fmt.Sprintf("%s=%s", kv.Key(), kv.String()))
 	}
 	rc.SvcParams = strings.Join(paramsStr, " ")
+
 	if rc.Type == "" {
 		rc.Type = "SVCB"
 	}
@@ -36,24 +40,39 @@ func (rc *RecordConfig) SetTargetSVCB(priority uint16, target string, params []d
 		panic("assertion failed: SetTargetSVCB called when .Type is not SVCB or HTTPS")
 	}
 
-	if rc.SvcPriority == 0 {
-		rc.RDATA = dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: rc.GetTargetField()}
-	} else {
-		rd, err := dnsv2.NewData(dnsv2.TypeSVCB, fmt.Sprintf("%d %s %s", rc.SvcPriority, rc.GetTargetField(), rc.SvcParams), ".")
-		if err != nil {
-			panic(fmt.Sprintf("BUG: Failed to create RDATA for HTTPS record: %v", err))
-		}
-		rc.RDATA = rd
+	switch rc.Type {
+	case "HTTPS":
+		rc.TypeNum = dnsv2.TypeHTTPS
+	case "SVCB":
+		rc.TypeNum = dnsv2.TypeSVCB
 	}
+	rc.Type = dnsv2.TypeToString[rc.TypeNum]
 
-	// Hack to set .RDATA without importing miekg/dns in pkg/rtypecontrol/fixlegacy.go
-	// valuev2, err := convertSVCBv1v2(params)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to convert SVCB parameters from v1 to v2: %w", err)
-	// }
-	// rc.RDATA = dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: target, Value: valuev2}
-	// rc.ComparableV3 = rc.RDATA.String() + "Z"
+	rd, err := MakeSVCB("", priority, target, params)
+	if err != nil {
+		return fmt.Errorf("failed to create RDATA for SVCB record: %w", err)
+	}
+	rc.RDATA = rd
 	rc.FixUp(".")
+
+	// if rc.SvcPriority == 0 {
+	// 	rc.RDATA = dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: rc.GetTargetField()}
+	// } else {
+	// 	rd, err := dnsv2.NewData(dnsv2.TypeSVCB, fmt.Sprintf("%d %s %s", rc.SvcPriority, rc.GetTargetField(), rc.SvcParams), ".")
+	// 	if err != nil {
+	// 		panic(fmt.Sprintf("BUG: Failed to create RDATA for HTTPS record: %v", err))
+	// 	}
+	// 	rc.RDATA = rd
+	// }
+
+	// // Hack to set .RDATA without importing miekg/dns in pkg/rtypecontrol/fixlegacy.go
+	// // valuev2, err := convertSVCBv1v2(params)
+	// // if err != nil {
+	// // 	return fmt.Errorf("failed to convert SVCB parameters from v1 to v2: %w", err)
+	// // }
+	// // rc.RDATA = dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: target, Value: valuev2}
+	// // rc.ComparableV3 = rc.RDATA.String() + "Z"
+	// rc.FixUp(".")
 
 	return nil
 }
@@ -144,23 +163,24 @@ func convertSVCBv1v2(params []dnsv1.SVCBKeyValue) ([]svcbv2.Pair, error) {
 	return value, nil
 }
 
-func ModifySVCBForComparison(existing, desired Records) Records {
-
-	// Clone the "desired" list. Its an array of pointers, so we clone the pointers. We can replace any record we want in the "desired" list without mutating the original.
-	newDesired := make(Records, len(desired))
-	copy(newDesired, desired)
+func SVCBHydrateDesiredEchIgnore(existing, desired Records) {
 
 	// Build the list of existing ECH values.
 	echs := gatherEchValues(existing)
 
-	// Scan desired for ech=IGNORE.  Replace any records.
-	recs, edits := replaceSvcbIgnores(newDesired, echs)
+	// // Clone the "desired" list. Its an array of pointers, so we clone the pointers. We can replace any record we want in the "desired" list without mutating the original.
+	// newDesired := make(Records, len(desired))
+	// copy(newDesired, desired)
 
-	if edits {
-		return recs
-	}
-	// No changes were made, so we can return the original "desired" list to save memory.
-	return desired
+	// Scan desired for ech=IGNORE.  Replace any records.
+	//recs, edits := replaceSvcbIgnores(newDesired, echs)
+	replaceSvcbIgnores(&desired, echs)
+
+	// if edits {
+	// 	return recs
+	// }
+	// // No changes were made, so we can return the original "desired" list to save memory.
+	// return desired
 }
 
 // gatherEchValues builds a map of FQDN to ECH values for all SVCB and HTTPS
@@ -172,7 +192,7 @@ func gatherEchValues(recs Records) map[string]*svcbv2.ECHCONFIG {
 	echs := map[string]*svcbv2.ECHCONFIG{}
 	for _, rec := range recs {
 		if rec.TypeNum == dnsv2.TypeSVCB || rec.TypeNum == dnsv2.TypeHTTPS {
-			if value, ok := rec.GetSVCBEchConfig(); ok {
+			if value := rec.GetSVCBEchConfig(); value != nil {
 				echs[rec.NameFQDN] = value
 			}
 		}
@@ -180,8 +200,10 @@ func gatherEchValues(recs Records) map[string]*svcbv2.ECHCONFIG {
 	return echs
 }
 
-// GetSVCBEchConfig returns the value of the ECH parameter. The value is a pointer to a clone.
-func (rc *RecordConfig) GetSVCBEchConfig() (*svcbv2.ECHCONFIG, bool) {
+// TODO: Unexport this?
+
+// getSVCBEchConfig returns the value of the ECH parameter. The value is a pointer to a clone.
+func (rc *RecordConfig) GetSVCBEchConfig() *svcbv2.ECHCONFIG {
 	if rc.TypeNum != dnsv2.TypeSVCB && rc.TypeNum != dnsv2.TypeHTTPS {
 		panic("assertion failed: GetSVCBParam called when .Type is not SVCB or HTTPS")
 	}
@@ -192,117 +214,148 @@ func (rc *RecordConfig) GetSVCBEchConfig() (*svcbv2.ECHCONFIG, bool) {
 	for _, param := range rc.RDATA.(dnsrdatav2.SVCB).Value {
 		key := svcbv2.PairToKey(param)
 		if key == svcbv2.KeyEchConfig {
-			p := param.(*svcbv2.ECHCONFIG)
-			c := p.Clone()
-			return c.(*svcbv2.ECHCONFIG), true
+			// p := param.(*svcbv2.ECHCONFIG)
+			// c := p.Clone()
+			// return c.(*svcbv2.ECHCONFIG), true
+			return param.(*svcbv2.ECHCONFIG)
 		}
 	}
-	return nil, false
+	return nil
 }
 
-func replaceSvcbIgnores(records Records, echs map[string]*svcbv2.ECHCONFIG) (Records, bool) {
-	edits := false
+// func replaceSvcbIgnores(records Records, echs map[string]*svcbv2.ECHCONFIG) (Records, bool) {
+func replaceSvcbIgnores(records *Records, echs map[string]*svcbv2.ECHCONFIG) {
+	// edits := false
 
-	for i, rec := range records {
-		// Skip rtypes we're not concerned with.
+	for _, rec := range *records {
+		// Not HTTPS/SVCB? skip.
 		if rec.TypeNum != dnsv2.TypeSVCB && rec.TypeNum != dnsv2.TypeHTTPS {
 			continue
 		}
 
-		// // Skip records that don't have ech=IGNORE.
-		// if ec, ok := rec.GetSVCBEchConfig(); ok && !bytes.Equal(ec.ECH, []byte("IGNORE")) {
-		// 	continue
-		// }
-		if !hasEchIgnore(rec) {
+		// Try to get the ECH.  Not exist Skip.
+		ec := rec.GetSVCBEchConfig()
+		if ec == nil {
 			continue
 		}
 
-		// Now we know this record has ech=IGNORE.
-		nRec, err := rec.Copy()
-		if err != nil {
-			panic(fmt.Sprintf("failed to copy record: %v", err))
-		}
-		if nEch, ok := echs[rec.NameFQDN]; ok {
-			// This record has an ECH value, so we replace "ech=IGNORE" with the actual value in the comparables.
-			nRec.RDATA = SVCBReplaceEch(nRec.RDATA.(dnsrdatav2.SVCB), nEch)
-		} else {
-			// This record doesn't have an ECH value, so we delete "ech=IGNORE" from the comparables.
-			t := nRec.RDATA.(dnsrdatav2.SVCB)
-			nRec.RDATA = SVCBDeleteEch(t)
+		// Look for ech=1000, which is our magic marker that this record wants us to substitute the actual ECH value.
+		if !bytes.Equal(ec.ECH, []byte{16, 0}) {
+			fmt.Printf("DEBUG: replaceSvcbIgnores: record %s has ech=%+v\n", rec.NameFQDN, ec.ECH)
+			continue
 		}
 
-		// Clear the ComparableV3 so it will be regenerated with the new RDATA.
-		nRec.ComparableV3 = ""
-		nRec.FixUp(".")
+		// Replace the ECH value with the value from "existing".
+		fmt.Printf("DEBUG: OLD ec=%+v\n", ec)
+		ec = echs[rec.NameFQDN]
+		fmt.Printf("DEBUG: NEW ec=%+v\n", ec)
+		// edits = true
 
-		// Replace the record.
-		records[i] = nRec
-		edits = true
+		// Fix the .ComparableV3.
+		rec.ComparableV3 = ""
+		rec.FixUp("")
+
+		// NB(tlim): There is a chance this zone is being uploaded to multiple
+		// providers. In that case it is unclear what will happen if there is a
+		// different ECH value in each provider.  I think we are modifying a
+		// copy.  However we might not be. In that case, we might flap between
+		// the different ECH values from each provider.
+
+		// // // Skip records that don't have ech=IGNORE.
+		// // if ec, ok := rec.GetSVCBEchConfig(); ok && !bytes.Equal(ec.ECH, []byte("IGNORE")) {
+		// // 	continue
+		// // }
+		// if !hasEchIgnore(rec) {
+		// 	continue
+		// }
+
+		// // Now we know this record has ech=IGNORE.
+		// nRec, err := rec.Copy()
+		// if err != nil {
+		// 	panic(fmt.Sprintf("failed to copy record: %v", err))
+		// }
+		// if nEch, ok := echs[rec.NameFQDN]; ok {
+		// 	// This record has an ECH value, so we replace "ech=IGNORE" with the actual value in the comparables.
+		// 	nRec.RDATA = replaceOrAddEch(nRec.RDATA.(dnsrdatav2.SVCB), nEch)
+		// } else {
+		// 	// This record doesn't have an ECH value, so we delete "ech=IGNORE" from the comparables.
+		// 	t := nRec.RDATA.(dnsrdatav2.SVCB)
+		// 	nRec.RDATA = SVCBDeleteEch(t)
+		// }
+
+		// // Clear the ComparableV3 so it will be regenerated with the new RDATA.
+		// nRec.ComparableV3 = ""
+		// nRec.FixUp(".")
+
+		// // Replace the record.
+		// records[i] = nil
+		// records[i] = nRec
+		// edits = true
 	}
 
-	return records, edits
+	//return records, edits
 }
 
-func hasEchIgnore(rec *RecordConfig) bool {
-	if rec.TypeNum != dnsv2.TypeSVCB && rec.TypeNum != dnsv2.TypeHTTPS {
-		panic("assertion failed: hasEchIgnore called when .Type is not SVCB or HTTPS")
-	}
+// func hasEchIgnore(rec *RecordConfig) bool {
+// 	if rec.TypeNum != dnsv2.TypeSVCB && rec.TypeNum != dnsv2.TypeHTTPS {
+// 		panic("assertion failed: hasEchIgnore called when .Type is not SVCB or HTTPS")
+// 	}
 
-	ec, ok := rec.GetSVCBEchConfig()
-	if !ok {
-		return false
-	}
+// 	ec, ok := rec.GetSVCBEchConfig()
+// 	if !ok {
+// 		return false
+// 	}
 
-	if bytes.Equal(ec.ECH, []byte("IGNORE")) {
-		return true
-	}
+// 	if bytes.Equal(ec.ECH, []byte("IGNORE")) {
+// 		return true
+// 	}
 
-	fmt.Printf("DEBUG: hasEchIgnore: record %s has ech=%s\n", rec.NameFQDN, string(ec.ECH))
+// 	fmt.Printf("DEBUG: hasEchIgnore: record %s has ech=%s\n", rec.NameFQDN, string(ec.ECH))
 
-	return false
-}
+// 	return false
+// }
 
-func SVCBReplaceEch(rr dnsrdatav2.SVCB, echConfig *svcbv2.ECHCONFIG) dnsrdatav2.SVCB {
-	// This is a bit of a hack, but dnsrdatav2.SVCB doesn't have a Clone method.
-	// We need to clone it to avoid mutating the original.
-	// We replace "ech=" as we clone it.
-	return dnsrdatav2.SVCB{
-		Priority: rr.Priority,
-		Target:   rr.Target,
-		Value: func() []svcbv2.Pair {
-			pairs := make([]svcbv2.Pair, len(rr.Value))
-			found := false
-			for i, p := range rr.Value {
-				if svcbv2.PairToKey(p) == svcbv2.KeyEchConfig {
-					pairs[i] = echConfig
-					found = true
-				} else {
-					pairs[i] = p.Clone()
-				}
-			}
-			if !found {
-				pairs = append(pairs, echConfig)
-			}
-			return pairs
-		}(),
-	}
-}
+// func replaceOrAddEch(rr dnsrdatav2.SVCB, echConfig *svcbv2.ECHCONFIG) dnsrdatav2.SVCB {
+// 	// This is a bit of a hack, but dnsrdatav2.SVCB doesn't have a Clone method.
+// 	// We need to clone it to avoid mutating the original.
+// 	// We replace "ech=" as we clone it.
+// 	return dnsrdatav2.SVCB{
+// 		Priority: rr.Priority,
+// 		Target:   rr.Target,
+// 		Value: func() []svcbv2.Pair {
+// 			pairs := make([]svcbv2.Pair, len(rr.Value))
+// 			found := false
+// 			for i, p := range rr.Value {
+// 				if svcbv2.PairToKey(p) == svcbv2.KeyEchConfig {
+// 					pairs[i] = echConfig
+// 					found = true
+// 				} else {
+// 					pairs[i] = p.Clone()
+// 				}
+// 			}
+// 			if !found {
+// 				pairs = append(pairs, echConfig)
+// 			}
+// 			return pairs
+// 		}(),
+// 	}
+// }
 
-func SVCBDeleteEch(rr dnsrdatav2.SVCB) dnsrdatav2.SVCB {
-	// This is a bit of a hack, but dnsrdatav2.SVCB doesn't have a Clone method.
-	// We need to clone it to avoid mutating the original.
-	// We deelte "ech=" as we clone it.
-	return dnsrdatav2.SVCB{
-		Priority: rr.Priority,
-		Target:   rr.Target,
-		Value: func() []svcbv2.Pair {
-			pairs := make([]svcbv2.Pair, len(rr.Value))
-			for i, p := range rr.Value {
-				if svcbv2.PairToKey(p) != svcbv2.KeyEchConfig {
-					pairs[i] = p.Clone()
-				}
-			}
-			return pairs
-		}(),
-	}
-}
+// func SVCBDeleteEch(rr dnsrdatav2.SVCB) dnsrdatav2.SVCB {
+// 	// This is a bit of a hack, but dnsrdatav2.SVCB doesn't have a Clone method.
+// 	// We need to clone it to avoid mutating the original.
+// 	// We deelte "ech=" as we clone it.
+// 	return dnsrdatav2.SVCB{
+// 		Priority: rr.Priority,
+// 		Target:   rr.Target,
+// 		Value: func() []svcbv2.Pair {
+// 			pairs := make([]svcbv2.Pair, len(rr.Value))
+// 			for i, p := range rr.Value {
+// 				if svcbv2.PairToKey(p) != svcbv2.KeyEchConfig {
+// 					pairs[i] = p.Clone()
+// 				}
+// 			}
+// 			return pairs
+// 		}(),
+// 	}
+// }
