@@ -160,13 +160,23 @@ func NewRecordConfig(origin string, name string, ttl uint32, typeNum uint16, arg
 	rc.RDATA = rd
 	rc.FixUp(origin)
 
-	// Hack to back-fill legacy fields.
+	// Hack to back-fill legacy fields. This will go away eventually.
 	switch rd := rc.RDATA.(type) {
+	case dnsrdatav2.DS:
+		// rc.DsKeyTag = rd.KeyTag
+		// rc.DsAlgorithm = rd.Algorithm
+		// rc.DsDigestType = rd.DigestType
+		// rc.DsDigest = rd.Digest
+		rc.SetTargetDS(rd.KeyTag, rd.Algorithm, rd.DigestType, rd.Digest)
 	case dnsrdatav2.SVCB:
 		rc.SvcPriority = rd.Priority
 		rc.SetTarget(rd.Target)
 		rc.SvcParams = svcbv2ValueToString(rd.Value)
 	case dnsrdatav2.TLSA:
+		rc.TlsaUsage = rd.Usage
+		rc.TlsaSelector = rd.Selector
+		rc.TlsaMatchingType = rd.MatchingType
+		rc.SetTarget(rd.Certificate)
 	case privatetypesrdata.URL:
 	case privatetypesrdata.URL301:
 	default:

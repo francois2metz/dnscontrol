@@ -78,9 +78,17 @@ func (handle *DS) FromStruct(dcn *domaintags.DomainNameVarieties, rec *models.Re
 	// Hack to deal with the fact that fixlegacy.go can't import rtype.
 	switch rec.F.(type) {
 	case *DS:
-		rec.RDATA = dnsrdatav2.DS{KeyTag: rec.F.(*DS).KeyTag, Algorithm: rec.F.(*DS).Algorithm, DigestType: rec.F.(*DS).DigestType, Digest: rec.F.(*DS).Digest}
+		rd, err := models.MakeDS(name, rec.F.(*DS).KeyTag, rec.F.(*DS).Algorithm, rec.F.(*DS).DigestType, rec.F.(*DS).Digest)
+		if err != nil {
+			return fmt.Errorf("MakeDS failed: %w", err)
+		}
+		rec.RDATA = rd
 	case *dnsv1.DS:
-		rec.RDATA = dnsrdatav2.DS{KeyTag: rec.F.(*dnsv1.DS).KeyTag, Algorithm: rec.F.(*dnsv1.DS).Algorithm, DigestType: rec.F.(*dnsv1.DS).DigestType, Digest: rec.F.(*dnsv1.DS).Digest}
+		rd, err := models.MakeDS(name, rec.F.(*DS).KeyTag, rec.F.(*DS).Algorithm, rec.F.(*DS).DigestType, rec.F.(*DS).Digest)
+		if err != nil {
+			return fmt.Errorf("MakeDS failed: %w", err)
+		}
+		rec.RDATA = rd
 	default:
 		panic(fmt.Sprintf("unexpected type for DS.FromStruct: %T", rec.F))
 	}

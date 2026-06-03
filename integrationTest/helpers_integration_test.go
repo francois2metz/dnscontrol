@@ -529,15 +529,11 @@ func dname(name, target string) *models.RecordConfig {
 }
 
 func ds(name string, keyTag uint16, algorithm, digestType uint8, digest string) *models.RecordConfig {
-	rec, err := rtypecontrol.NewRecordConfigFromRaw(rtypecontrol.FromRawOpts{
-		Type: "DS",
-		TTL:  defaultTTL,
-		Args: []any{name, keyTag, algorithm, digestType, digest},
-		DCN:  globalDCN,
-	})
-	panicOnErr(err)
-	rec.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
-	return rec
+	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, defaultTTL, dnsv2.TypeDS, keyTag, algorithm, digestType, digest)
+	if err != nil {
+		panic(err)
+	}
+	return r
 }
 
 func dnskey(name string, flags uint16, protocol, algorithm uint8, publicKey string) *models.RecordConfig {

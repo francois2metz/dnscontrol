@@ -15,10 +15,10 @@ import (
 // * This does not handle "*" (wildcards) since they are not valid in targets. That's why this is called TargetHost and not Host.
 // Examples: (assume $origin = "domain.com")
 // * `@` -> `@`
-// * `$origin` -> `@`
 // * `foo.$origin.` -> `foo.$origin.`
 // * `short` -> `short.$origin`
 // * `other.com.` -> `other.com.`
+// * NOT: `$origin.` -> `@`  (We no longer do this for the same reason we don't product shortnames any more)
 func TargetHost(origin string, arg any) string {
 	if strings.HasSuffix(origin, ".") {
 		panic("mustbe.Host called with origin ending with .")
@@ -39,16 +39,16 @@ func TargetHost(origin string, arg any) string {
 	case "@":
 		return name
 	case "":
-		return "@"
+		return origin + "."
 	}
 
 	// Normalize it
 	name = domaintags.EfficientToASCII(name)
 
-	// shorten origin to "@".
-	if origin != "" && name == origin+"." {
-		return "@"
-	}
+	// // shorten origin to "@".
+	// if origin != "" && name == origin+"." {
+	//	return "@"
+	//}
 
 	// Add domain if needed.
 	if strings.HasSuffix(name, ".") {

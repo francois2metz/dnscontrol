@@ -54,31 +54,6 @@ func (rc *RecordConfig) SetTargetSVCB(priority uint16, target string, params []d
 	rc.RDATA = rd
 	rc.FixUp("")
 
-	// // HACK: Back-port the
-	// rc.RDATA = rd
-	// rc.SvcPriority = priority
-	// rc.SetTarget(target)
-	// rc.SvcParams = params
-
-	// if rc.SvcPriority == 0 {
-	// 	rc.RDATA = dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: rc.GetTargetField()}
-	// } else {
-	// 	rd, err := dnsv2.NewData(dnsv2.TypeSVCB, fmt.Sprintf("%d %s %s", rc.SvcPriority, rc.GetTargetField(), rc.SvcParams), ".")
-	// 	if err != nil {
-	// 		panic(fmt.Sprintf("BUG: Failed to create RDATA for HTTPS record: %v", err))
-	// 	}
-	// 	rc.RDATA = rd
-	// }
-
-	// // Hack to set .RDATA without importing miekg/dns in pkg/rtypecontrol/fixlegacy.go
-	// // valuev2, err := convertSVCBv1v2(params)
-	// // if err != nil {
-	// // 	return fmt.Errorf("failed to convert SVCB parameters from v1 to v2: %w", err)
-	// // }
-	// // rc.RDATA = dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: target, Value: valuev2}
-	// // rc.ComparableV3 = rc.RDATA.String() + "Z"
-	// rc.FixUp(".")
-
 	return nil
 }
 
