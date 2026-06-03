@@ -239,16 +239,20 @@ func MakeSVCB(origin string, args ...any) (dnsv2.RDATA, error) {
 	case []svcbv2.Pair:
 		return dnsrdatav2.SVCB{Priority: mustbe.Uint16(priority), Target: mustbe.TargetHost(origin, target), Value: v}, nil
 	case string:
+		fmt.Printf("DEBUG MakeSVCB: Before conversion params=%q\n", v)
 		v = strings.ReplaceAll(" "+v+" ", ` ech=IGNORE `, ` ech=1000`)
 		v = strings.ReplaceAll(v, `  `, ` `) // Collapse 2 spaces into 1  (This may be unneeded but doesn't hurt)
 		v = strings.TrimSpace(v)
+		fmt.Printf("DEBUG MakeSVCB: After conversion params=%q\n", v)
 		// ech=1000 is a special value that indicates "use the ech value from
 		// the existing zone." This is not an RFC standard, just something we do
 		// in DNSControl. There is a very small chance that someone will
 		// actually have an ech value of "0000" but if that happens I will eat
 		// my hat.
 
-		return dnsv2.NewData(dnsv2.TypeHTTPS, fmt.Sprintf("%d %s %s", mustbe.Uint16(priority), mustbe.TargetHost(origin, target), v))
+		line := fmt.Sprintf("%d %s %s", mustbe.Uint16(priority), mustbe.TargetHost(origin, target), v)
+		fmt.Printf("DEBUG MakeSVCB: Creating RDATA with line=%q\n", line)
+		return dnsv2.NewData(dnsv2.TypeHTTPS, line)
 		// NB(tlim): It's an abomination to construct this string just to parse it but dnsv2 doesn't expose the parser in a way to do a partial line.
 	}
 
