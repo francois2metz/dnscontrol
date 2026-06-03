@@ -163,9 +163,6 @@ func NewRecordConfig(origin string, name string, ttl uint32, typeNum uint16, arg
 	// Hack to back-fill legacy fields.
 	switch rd := rc.RDATA.(type) {
 	case dnsrdatav2.SVCB:
-		// rc.SvcPriority = rd.(dnsrdatav2.SVCB).Priority
-		// rc.SetTarget(rd.(dnsrdatav2.SVCB).Target)
-		// rc.SvcParams = svcbv2ValueToString(rd.(dnsrdatav2.SVCB).Value)
 		rc.SvcPriority = rd.Priority
 		rc.SetTarget(rd.Target)
 		rc.SvcParams = svcbv2ValueToString(rd.Value)

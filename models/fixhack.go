@@ -134,10 +134,6 @@ func (rc *RecordConfig) FixUp(origin string) {
 			rc.RDATA, err = MakeSSHFP(origin, rc.SshfpAlgorithm, rc.SshfpFingerprint, rc.GetTargetField())
 		case "SVCB":
 			rc.RDATA, err = MakeSVCB(origin, rc.SvcPriority, rc.GetTargetField(), rc.SvcParams)
-			// if err != nil {
-			// 	panic(fmt.Sprintf("BUG: FixUp: MakeSVCB failed for record %s IN %s %s: %v", rc.NameFQDN, rc.Type, rc.GetTargetField(), err))
-			// }
-			// rc.RDATA = rd
 
 		case "TLSA":
 			rc.RDATA, err = MakeTLSA(origin, rc.TlsaUsage, rc.TlsaSelector, rc.TlsaMatchingType, rc.GetTargetField())
