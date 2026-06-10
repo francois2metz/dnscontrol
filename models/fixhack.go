@@ -81,8 +81,7 @@ func (rc *RecordConfig) FixUp(origin string) {
 		case "DNSKEY":
 			rc.RDATA, err = MakeDNSKEY(origin, nil, rc.DnskeyFlags, rc.DnskeyProtocol, rc.DnskeyAlgorithm, rc.DnskeyPublicKey)
 		case "DS":
-			//rc.RDATA, err = MakeDS(origin, nil, rc.DsKeyTag, rc.DsAlgorithm, rc.DsDigestType, rc.DsDigest)
-			// DS is native to RecordConfigV3. No FixUP is needed or possible.
+			rc.RDATA, err = MakeDS(origin, nil, rc.DsKeyTag, rc.DsAlgorithm, rc.DsDigestType, rc.DsDigest)
 
 		case "FRAME":
 			rc.RDATA, err = privatetypesrdata.MakeFRAME(origin, nil, rc.GetTargetField())
