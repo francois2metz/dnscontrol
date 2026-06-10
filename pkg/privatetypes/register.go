@@ -12,10 +12,13 @@ import (
 //	demoRC1, err := TypeToMakeRDATA[dnsv2.TypeA](mustbe.IPv4("1.2.3.4"))
 //	demoRC2, err := TypeToMakeRDATA[dnsv2.TypeCNAME](mustbe.Host("www", "example.com"))
 //	demoRC3, err := TypeToMakeRDATA[privatetypes.TypeCFWORKERROUTE](mustbe.RawString("example.com/*"), mustbe.RawString("example.com/worker"))
-var TypeToMakeRDATA = make(map[uint16]func(origin string, args ...any) (dnsv2.RDATA, error))
+
+type MakerRn func(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error)
+
+var TypeToMakeRDATA = make(map[uint16]MakerRn)
 
 // Register registers a new private RR type. It panics if the code point or name is already in use.
-func Register(codepoint uint16, typeName string, newFn func() dnsv2.RR, makeFn func(origin string, args ...any) (dnsv2.RDATA, error)) {
+func Register(codepoint uint16, typeName string, newFn func() dnsv2.RR, makeFn MakerRn) {
 
 	/*
 		# Private Resource Records
@@ -34,7 +37,7 @@ func Register(codepoint uint16, typeName string, newFn func() dnsv2.RR, makeFn f
 
 	// typenum -> func() RR  i.e. a function that creates a new RR struct for the given code point.
 	if dnsv2.TypeToRR[codepoint] != nil {
-		panic(fmt.Sprintf("TypeToRR[%d] already in use", codepoint))
+		panic(fmt.Sprintf("TypeToRR[%d] already in use (check for duplicate codepoint assignments)", codepoint))
 	}
 	dnsv2.TypeToRR[codepoint] = newFn
 
@@ -54,7 +57,7 @@ func Register(codepoint uint16, typeName string, newFn func() dnsv2.RR, makeFn f
 }
 
 // RegisterMaker registers just the Make*() function for an rtype. This is needed for non-private types.
-func RegisterMaker(codepoint uint16, makeFn func(origin string, args ...any) (dnsv2.RDATA, error)) {
+func RegisterMaker(codepoint uint16, makeFn MakerRn) {
 
 	typeName := dnsv2.TypeToString[codepoint]
 
@@ -63,4 +66,9 @@ func RegisterMaker(codepoint uint16, makeFn func(origin string, args ...any) (dn
 		panic(fmt.Sprintf("TypeToMakeRDATA[%d] a.k.a. %s already in use by %T", codepoint, typeName, s))
 	}
 	TypeToMakeRDATA[codepoint] = makeFn
+}
+
+func IsModernType(typeName string) bool {
+	_, ok := TypeToMakeRDATA[dnsv2.StringToType[typeName]]
+	return ok
 }

@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	dnsutilv2 "codeberg.org/miekg/dns/dnsutil"
+	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
 )
 
 // DefaultTTL is applied to any DNS record without an explicit TTL.
@@ -18,6 +21,71 @@ type DNSConfig struct {
 	RegistrarsByName   map[string]*RegistrarConfig   `json:"-"`
 	DNSProvidersByName map[string]*DNSProviderConfig `json:"-"`
 	SkipRecordAudit    bool                          `json:"skiprecordaudit,omitempty"`
+}
+
+// ImportRawRecords iterates over the dc.RawRecords from each domain,
+// converting each to a RecordConfig and deleting the raw version (to save
+// memory). This is how records get from dnsconfig.js to dc.Records.
+func (config *DNSConfig) ImportRawRecords() error {
+	for _, dc := range config.Domains {
+		for _, rawRec := range dc.RawRecords {
+			filePos := FixPosition(rawRec.FilePos)
+			typeName := rawRec.Type
+			//fmt.Printf("DEBUG: dc.Name=%s raw.Type=%s filepos=%s fp=%s\n", dc.Name, rawRec.Type, rawRec.FilePos, filePos)
+
+			if IsBuilder(typeName) {
+				records, err := dc.runBuilder(typeName, rawRec.TTL, rawRec.Args)
+				if err != nil {
+					return err
+				}
+				for _, record := range records {
+					record.FilePos = filePos
+				}
+				// Generation complete!  Append it.
+				dc.Records = append(dc.Records, records...)
+			} else {
+				typeNum, err := dnsutilv2.StringToType(typeName)
+				if err != nil {
+					return fmt.Errorf("unknown record type at %s [%s(%s)]: %w", filePos, typeName, txtutil.ZoneifyManyAny(rawRec.Args), err)
+				}
+
+				label, err := dc.LabelFromDnsconfigjs(rawRec.Args[0].(string))
+				if err != nil {
+					return fmt.Errorf("label error at %s [%s(%s)]: %w", filePos, typeName, txtutil.ZoneifyManyAny(rawRec.Args), err)
+				}
+
+				mm, err := mergeMetas(rawRec.Metas)
+				if err != nil {
+					return fmt.Errorf("metadata error at %s [%s(%s)]: %w", filePos, typeName, txtutil.ZoneifyManyAny(rawRec.Args), err)
+				}
+
+				rec, err := dc.NewRecordConfigFromDnsconfigjs(label, rawRec.TTL, typeNum, rawRec.Args[1:], mm)
+				if err != nil {
+					return fmt.Errorf("ImprotRawRecords error at %s [%s(%s)]: %w", filePos, typeName, txtutil.ZoneifyManyAny(rawRec.Args), err)
+				}
+				rec.FilePos = filePos
+				if rec.Metadata, err = mergeMetas(rawRec.Metas); err != nil {
+					return fmt.Errorf("metadata error at %s [%s(%s)]: %w", filePos, typeName, txtutil.ZoneifyManyAny(rawRec.Args), err)
+				}
+
+				if doesStutter(rec.Name, dc.Name) {
+					return fmt.Errorf("stutter error at %s %s(%s)", filePos, typeName, txtutil.ZoneifyManyAny(rawRec.Args))
+				}
+
+				// Conversion complete!  Append it.
+				dc.AddRecordConfig(rec)
+			}
+
+			// We're never going to see this rawRec again. Free its Args.
+			clear(rawRec.Args)
+			rawRec.Args = nil
+		}
+
+		// We're never goign to see these RawRecords again. Let them go.
+		dc.RawRecords = nil
+	}
+
+	return nil
 }
 
 // FindDomain returns the *DomainConfig for domain query in config.

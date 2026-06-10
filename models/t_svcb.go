@@ -47,7 +47,7 @@ func (rc *RecordConfig) SetTargetSVCB(priority uint16, target string, params []d
 	}
 	rc.Type = dnsv2.TypeToString[rc.TypeNum]
 
-	rd, err := MakeSVCB("", priority, target, params)
+	rd, err := MakeSVCB("", nil, priority, target, params)
 	if err != nil {
 		return fmt.Errorf("failed to create RDATA for SVCB record: %w", err)
 	}
@@ -114,7 +114,7 @@ func svcbv2ValueToString(pairs []svcbv2.Pair) string {
 		}
 		knum := svcbv2.PairToKey(p)
 		k := svcbv2.KeyToString(knum)
-		sb.WriteString(fmt.Sprintf("%s=%s", k, p.String()))
+		fmt.Fprintf(&sb, "%s=%s", k, p.String())
 		//fmt.Printf("%d %s %s\n", i, k, p.String())
 	}
 	return sb.String()

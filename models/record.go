@@ -9,6 +9,7 @@ import (
 	dnsv2 "codeberg.org/miekg/dns"
 	dnsutilv2 "codeberg.org/miekg/dns/dnsutil"
 	dnsrdatav2 "codeberg.org/miekg/dns/rdata"
+	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/privatetypes"
 	privatetypesrdata "github.com/DNSControl/dnscontrol/v4/pkg/privatetypes/rdata"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
@@ -16,6 +17,7 @@ import (
 	dnsv1 "github.com/miekg/dns"
 	dnsutilv1 "github.com/miekg/dns/dnsutil"
 	"github.com/qdm12/reprint"
+	"golang.org/x/net/idna"
 )
 
 // RecordConfig stores a DNS record whether it was created from data downloaded from
@@ -63,7 +65,7 @@ type RecordConfig struct {
 	// Comparable is an opaque string that can be used to compare two
 	// RecordConfigs for equality. Typically this is the Zonefile line minus the
 	// label and TTL.
-	Comparable string `json:"comparable,omitempty"` // Cache of ToComparableNoTTL()
+	//xComparable string `json:"comparable,omitempty"` // Cache of ToComparableNoTTL()
 
 	// ZonefilePartial is the partial zonefile line for this record, excluding
 	// the label and TTL.  If this is not an official RR type, we invent the format.
@@ -143,49 +145,233 @@ type RecordConfig struct {
 	UnknownTypeName    string            `json:"unknown_type_name,omitempty"`
 }
 
-func NewRecordConfig(origin string, name string, ttl uint32, typeNum uint16, args ...any) (*RecordConfig, error) {
-
-	rc := &RecordConfig{
-		TypeNum: typeNum,
-		Type:    dnsutilv2.TypeToString(typeNum),
-		// Name:    name,
-		TTL: ttl,
-	}
-	rc.SetLabel(name, origin)
-
-	rd, err := privatetypes.TypeToMakeRDATA[typeNum](origin, args...)
+// NewRecordConfig constructs a models.NewRecord().
+//
+// It may seem odd that this is a method of DomainConfig but it makes sense if
+// you consider that a RecordConfig lives in the context of its DomainConfig.
+// For example, the need to shorten a FQDN requires knowing the domain's name,
+// which is stored in a DomainConfig. If you need to create a RecordConfig
+// outside of a DomainConfig, consider using models.MakeTestRC() or
+// models.MakeTestRCParse() (both in record_helpers_test.go).
+func (dc *DomainConfig) NewRecordConfig(name string, ttl uint32, typeAny any, args ...any) (*RecordConfig, error) {
+	mustbe.ValidArgs(args)
+	typeNum, err := anyToTypeNum(typeAny)
 	if err != nil {
-		log.Fatalf("BUG: Failed to create RDATA for type %d: %v", typeNum, err)
+		return nil, err
 	}
-	rc.RDATA = rd
-	rc.FixUp(origin)
+
+	//rd, err := privatetypes.TypeToMakeRDATA[typeNum](dc.Name, args...)
+	f, ok := privatetypes.TypeToMakeRDATA[typeNum]
+	if !ok {
+		return nil, fmt.Errorf("NewRecordConfig: failed TypeToMakeRDATA[%d] == nil\n", typeNum)
+	}
+	rd, err := f(dc.Name, nil, args...)
+	if err != nil {
+		log.Fatalf("NewRecordConfig: Failed to create RDATA for type %d: %+v", typeNum, err)
+	}
+
+	return newRecordConfigHelper(dc.Name, name, ttl, typeNum, rd, nil)
+}
+
+// NewRecordConfigParse is like NewRecordConfig but the fields of the record come from parsing a string (data).
+func (dc *DomainConfig) NewRecordConfigParse(name string, ttl uint32, typeAny any, data string) (*RecordConfig, error) {
+	typeNum, err := anyToTypeNum(typeAny)
+	if err != nil {
+		return nil, err
+	}
+	rd, err := dnsv2.NewData(typeNum, data, dc.Name)
+	if err != nil {
+		return nil, err
+	}
+	return newRecordConfigHelper(dc.Name, name, ttl, typeNum, rd, nil)
+}
+
+// NewRecordConfigForRRtoRC is only for use by dnsrr.go.
+func (dc *DomainConfig) NewRecordConfigFromDnsconfigjs(name string, ttl uint32, typeNum uint16, args []any, metadata map[string]string) (*RecordConfig, error) {
+
+	rd, err := privatetypes.TypeToMakeRDATA[typeNum](dc.Name, metadata, args...)
+	if err != nil {
+		log.Fatalf("NewRecordConfigForRRtoRC: Failed to create RDATA for type %s: %v", dnsutilv2.TypeToString(typeNum), err)
+	}
+	return newRecordConfigHelper(dc.Name, name, ttl, typeNum, rd, metadata)
+}
+
+// NewRecordConfigForRRtoRC is only for use by dnsrr.go.
+func NewRecordConfigForRRtoRC(origin, name string, ttl uint32, typeNum uint16, args ...any) (*RecordConfig, error) {
+	mustbe.ValidArgs(args)
+
+	rd, err := privatetypes.TypeToMakeRDATA[typeNum](origin, nil, args...)
+	if err != nil {
+		log.Fatalf("NewRecordConfigForRRtoRC: Failed to create RDATA for type %s: %v", dnsutilv2.TypeToString(typeNum), err)
+	}
+	return newRecordConfigHelper(origin, name, ttl, typeNum, rd, nil)
+}
+
+// // newRecordConfigHelper creates a RecordConfig using a dnsv2.RDATA.
+// // This is risky because it assumes the caller has done a lot of the prep work
+// // that is automatic with NewRecordConfig and NewRecordConfigParse.  In
+// // partiular, any hostnames must be converted to ASCII (IDN PunyCode) and must
+// // be FQDNs (usually with a "." at the end, but not for all record types!) and
+// // not shortnames.
+//
+// // We're commenting this out until someone actually needs this functionality, most likely AXFRDDNS.
+// // (Note to self: Maybe it should take an dnsv2.RR so that it can validate the label, ttl, etc?)
+//
+//	func (dc *DomainConfig) NewRecordConfigRDATA(name string, ttl uint32, typeNum uint16, rd dnsv2.RDATA) (*RecordConfig, error) {
+//		return newRecordConfigHelper(origin, ttl, typeNum, rd)
+//	}
+
+// newRecordConfigHelper is a helper.  if rd != nil, args is ignored.
+// All valid RecordConfig structs come through this function. Everything else is questionable.
+func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd dnsv2.RDATA, metadata map[string]string) (*RecordConfig, error) {
+	rc := &RecordConfig{
+		TypeNum:  typeNum,
+		Type:     dnsutilv2.TypeToString(typeNum),
+		TTL:      ttl,
+		RDATA:    rd,
+		Metadata: metadata,
+	}
+	rc.Name = name
+	rc.NameUnicode = makeLabelNameUnicode(name)
+	rc.NameFQDN = makeLabelNameFQDN(origin, name)
+	rc.NameFQDNUnicode = makeNameFQDNUnicode(rc.NameFQDN)
+
+	rc.FixUp(origin) // Add .ComparableV3
 
 	// Hack to back-fill legacy fields. This will go away eventually.
 	switch rd := rc.RDATA.(type) {
+	case dnsrdatav2.A:
+		rc.SetTargetIP(rd.Addr)
+	case dnsrdatav2.CAA:
+		rc.SetTargetCAA(rd.Flag, rd.Tag, rd.Value)
+	case dnsrdatav2.CNAME:
+		rc.SetTarget(rd.Target)
 	case dnsrdatav2.DS:
 		rc.SetTargetDS(rd.KeyTag, rd.Algorithm, rd.DigestType, rd.Digest)
+	case dnsrdatav2.DNSKEY:
+		rc.SetTargetDNSKEY(rd.Flags, rd.Protocol, rd.Algorithm, rd.PublicKey)
+	case dnsrdatav2.LOC:
+		rc.SetTargetLOC(rd.Version, rd.Latitude, rd.Longitude, rd.Altitude, rd.Size, rd.HorizPre, rd.VertPre)
+	case dnsrdatav2.MX:
+		rc.SetTargetMX(rd.Preference, rd.Mx)
+	case dnsrdatav2.NAPTR:
+		rc.SetTargetNAPTR(rd.Order, rd.Preference, rd.Flags, rd.Service, rd.Regexp, rd.Service)
 	case dnsrdatav2.RP:
-		// noop
-	case dnsrdatav2.SVCB:
+		// noop -- no legacy fields
+	case dnsrdatav2.SMIMEA:
+		rc.SetTargetSMIMEA(rd.Usage, rd.Selector, rd.MatchingType, rd.Certificate)
+	case dnsrdatav2.SOA:
+		rc.SetTargetSOA(rd.Ns, rd.Mbox, rd.Serial, rd.Refresh, rd.Retry, rd.Expire, rd.Minttl)
+	case dnsrdatav2.SRV:
+		rc.SetTargetSRV(rd.Priority, rd.Weight, rd.Port, rd.Target)
+	case dnsrdatav2.SVCB: // There is no dnsrdatav2.HTTPS
 		rc.SvcPriority = rd.Priority
 		rc.SetTarget(rd.Target)
 		rc.SvcParams = svcbv2ValueToString(rd.Value)
+	case dnsrdatav2.SSHFP:
+		rc.SetTargetSSHFP(rd.Algorithm, rd.Type, rd.FingerPrint)
 	case dnsrdatav2.TLSA:
 		rc.SetTargetTLSA(rd.Usage, rd.Selector, rd.MatchingType, rd.Certificate)
-	case privatetypesrdata.URL:
-	case privatetypesrdata.URL301:
 	default:
-		return nil, fmt.Errorf("assertion failed: NewRecordConfig back-fill has not implemented type %T", rd)
+		switch rc.Type {
+		case "CLOUDFLAREAPI_SINGLE_REDIRECT":
+			// no-op
+		case "PORKBUN_URLFWD":
+			p := rd.(privatetypesrdata.PORKBUNURLFWD)
+			if rc.Metadata == nil {
+				rc.Metadata = map[string]string{}
+			}
+			rc.Metadata["type"] = p.TypeName
+			rc.Metadata["includePath"] = p.IncludePath
+			rc.Metadata["wildcard"] = p.Wildcard
+		case "URL":
+			u := rd.(privatetypesrdata.URL)
+			rc.SetTarget(u.Location)
+			if rc.Metadata == nil {
+				rc.Metadata = map[string]string{}
+			}
+			rc.Metadata["includePath"] = fmt.Sprintf("%t", u.PorkbunIncludePath)
+			rc.Metadata["wildcard"] = fmt.Sprintf("%t", u.PorkbunWildCard)
+		case "URL301":
+			u := rd.(privatetypesrdata.URL301)
+			rc.SetTarget(u.Location)
+		default:
+			return nil, fmt.Errorf("assertion failed: NewRecordConfig back-fill has not implemented type %T", rd)
+			// TODO:
+			//case privatetypes..AzureAlias:
+			//case privatetypes..LUA:
+			//case privatetypes..R53Alias:
+			//case privatetypes..AKAMAITLC:
+		}
 	}
 
 	return rc, nil
+}
+
+func anyToTypeNum(a any) (uint16, error) {
+	switch v := a.(type) {
+	case uint16:
+		return v, nil
+	case int:
+		return uint16(v), nil
+	case string:
+		typeNum, err := dnsutilv2.StringToType(v)
+		if err == nil {
+			return typeNum, nil
+		} else {
+			return 0, fmt.Errorf("anyToTypeNum(%q) failed: %w", v, err)
+		}
+	}
+	return 0, fmt.Errorf("anyToTypeNum called with unknown type: %T", a)
+}
+
+// func anyToType(a any) (uint16, string, error) {
+// 	switch v := a.(type) {
+// 	case uint16:
+// 		return v, dnsutilv2.TypeToString(v), nil
+// 	case string:
+// 		typeNum, err := dnsutilv2.StringToType(v)
+// 		if err == nil {
+// 			return typeNum, v, nil
+// 		} else {
+// 			return 0, "", fmt.Errorf("anyToTypeNum(%q) failed: %w", v, err)
+// 		}
+// 	}
+// 	return 0, "", fmt.Errorf("anyToTypeNum called with unknown type: %T", a)
+// }
+
+func makeLabelNameFQDN(origin, name string) string {
+	if name == "@" {
+		return origin
+	}
+	if strings.HasSuffix(name, ".") { // only needed by TestWriteZoneFileEach() and may be removed when that's gone.
+		return name[:len(name)-1]
+	}
+	return name + "." + origin
+}
+
+func makeLabelNameUnicode(name string) string {
+	nameUnicode, err := idna.ToUnicode(name)
+	if err != nil {
+		panic(err) // should not happen
+	}
+	return nameUnicode
+}
+
+func makeNameFQDNUnicode(nameFQDN string) string {
+	// TODO(tlim): If this is too slow, we could join name + originFQDN
+	nameUnicode, err := idna.ToUnicode(nameFQDN)
+	if err != nil {
+		panic(err) // should not happen
+	}
+	return nameUnicode
 }
 
 // MarshalJSON marshals RecordConfig.
 func (rc *RecordConfig) MarshalJSON() ([]byte, error) {
 	recj := &struct {
 		RecordConfig
-		Target string `json:"target"`
+		Target string `json:"target,omitempty"`
 	}{
 		RecordConfig: *rc,
 		Target:       rc.GetTargetField(),
@@ -200,7 +386,7 @@ func (rc *RecordConfig) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON unmarshals RecordConfig.
 func (rc *RecordConfig) UnmarshalJSON(b []byte) error {
 	recj := &struct {
-		Target string `json:"target"`
+		Target string `json:"target,omitempty"`
 
 		Type      string            `json:"type"` // All caps rtype name.
 		Name      string            `json:"name"` // The short name. See above.
@@ -333,6 +519,10 @@ func (rc *RecordConfig) SetLabel(short, origin string) {
 		panic(fmt.Errorf("origin (%s) is not supposed to end with a dot", origin))
 	}
 	if strings.HasSuffix(short, ".") {
+		if strings.HasSuffix(short, origin+".") {
+			fmt.Printf("DEBUG: ******** SetLabel on FQDNdot: %q origin=%q\n", short, origin)
+
+		}
 		if short != "**current-domain**" {
 			panic(fmt.Errorf("short (%s) is not supposed to end with a dot", short))
 		}
@@ -393,9 +583,12 @@ func (rc *RecordConfig) GetLabelFQDN() string {
 // metafields.  Provider-specific metafields like CF_PROXY are not the same as
 // pseudo-records like ANAME or R53_ALIAS.
 func (rc *RecordConfig) ToComparableNoTTL() string {
-	if rc.IsModernType() {
-		return rc.Comparable
+	if rc.ComparableV3 != "" {
+		return rc.ComparableV3
 	}
+	// if rc.IsModernType() {
+	// 	return rc.Comparable
+	// }
 
 	switch rc.Type {
 	case "SOA":
@@ -616,7 +809,6 @@ func (rc *RecordConfig) Key() RecordKey {
 
 // GetSVCBValue returns the SVCB Key/Values as a list of Key/Values.
 // Used to construct dnsv.RR of type SVCB or HTTPS. (This is legacy code that should go away eventualy).
-// func (rc *RecordConfig) GetSVCBValue() []dnsv1.SVCBKeyValue {
 func (rc *RecordConfig) GetSVCBValue() []dnsv1.SVCBKeyValue {
 	// if !strings.Contains(rc.SvcParams, "IGNORE+DNSCONTROL") {
 	// 	rc.SvcParams = strings.ReplaceAll(rc.SvcParams, "ech=IGNORE", "ech=IGNORE+DNSCONTROL+++")

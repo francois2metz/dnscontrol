@@ -1,6 +1,7 @@
 package privatetypes
 
 import (
+	"fmt"
 	"strconv"
 
 	dnsv2 "codeberg.org/miekg/dns"
@@ -14,10 +15,12 @@ func init() {
 	Register(TypeNETLIFY, "NETLIFY", func() dnsv2.RR { return new(NETLIFY) }, privatetypesrdata.MakeNETLIFY)
 }
 
-const TypeNETLIFY = 65316
+const TypeNETLIFY = uint16(65295)
 
 type NETLIFY struct {
 	Hdr dnsv2.Header
+
+	privatetypesrdata.NETLIFY
 }
 
 // Typer interface.
@@ -27,12 +30,16 @@ func (rr *NETLIFY) Type() uint16 { return TypeNETLIFY }
 // RR interface.
 
 func (rr *NETLIFY) Header() *dnsv2.Header { return &rr.Hdr }
-func (rr *NETLIFY) Len() int              { return rr.Hdr.Len() }
+func (rr *NETLIFY) Len() int {
+	return rr.Hdr.Len()
+}
 func (rr *NETLIFY) Data() dnsv2.RDATA {
 	return &privatetypesrdata.NETLIFY{}
 }
 func (rr *NETLIFY) Clone() dnsv2.RR {
-	return &NETLIFY{rr.Hdr}
+	return &NETLIFY{
+		rr.Hdr,
+		privatetypesrdata.NETLIFY{}}
 }
 func (rr *NETLIFY) String() string {
 	return rr.Header().Name + "\t" +
@@ -41,6 +48,10 @@ func (rr *NETLIFY) String() string {
 }
 
 // Parse makes an RDATA for this type using the tokens from dnsv2's parser.
-func (rr *NETLIFY) Parse(tokens []string, _ string) error {
+func (rr *NETLIFY) Parse(tokens []string, s string) error {
+	args := TokensToArgs(tokens)
+	if len(args) != 0 {
+		return fmt.Errorf("NETLIFY requires exactly 0 arguments, got %d", len(args))
+	}
 	return nil
 }

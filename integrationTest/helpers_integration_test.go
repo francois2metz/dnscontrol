@@ -16,11 +16,9 @@ import (
 	dnsv2 "codeberg.org/miekg/dns"
 	dnsrdatav2 "codeberg.org/miekg/dns/rdata"
 	"github.com/DNSControl/dnscontrol/v4/models"
-	"github.com/DNSControl/dnscontrol/v4/pkg/domaintags"
 	"github.com/DNSControl/dnscontrol/v4/pkg/nameservers"
 	"github.com/DNSControl/dnscontrol/v4/pkg/privatetypes"
 	"github.com/DNSControl/dnscontrol/v4/pkg/providers"
-	"github.com/DNSControl/dnscontrol/v4/pkg/rtypecontrol"
 	"github.com/DNSControl/dnscontrol/v4/pkg/transform"
 	"github.com/DNSControl/dnscontrol/v4/pkg/zonerecs"
 	dnsutilv1 "github.com/miekg/dns/dnsutil"
@@ -34,9 +32,12 @@ var (
 )
 
 // Global variable to hold the current DomainConfig	for use in FromRaw calls.
-var globalDCN *domaintags.DomainNameVarieties
+// This is an ugly, ugly, hack. We have to find something better.
+var globalDC *models.DomainConfig
 
-// Default TTL used in integration tests
+// var globalDCN *domaintags.DomainNameVarieties
+
+// Default TTL used in integration tests.
 var defaultTTL = uint32(300)
 
 // Helper constants/funcs for the HEDNS Dynamic DNS testing:
@@ -101,7 +102,7 @@ func CfFlattenOn() *TestCase {
 func getDomainConfigWithNameservers(t *testing.T, prv providers.DNSServiceProvider, domainName string) *models.DomainConfig {
 	dc, _ := models.NewDomainConfig(domainName)
 	dc.PostProcess()
-	rtypecontrol.FixLegacyDC(dc)
+	dc.FixLegacyDC()
 
 	// fix up nameservers
 	ns, err := prv.GetNameservers(domainName)
@@ -168,7 +169,7 @@ func testPermitted(p string, f TestGroup) error {
 // 	}
 // 	// Make a fake entry.
 // 	defaultSoaRec := &models.RecordConfig{Type: "SOA"}
-// 	defaultSoaRec.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+// 	defaultSoaRec.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 // 	return defaultSoaRec, 0
 // }
 
@@ -229,7 +230,7 @@ func makeChanges(t *testing.T, prv providers.DNSServiceProvider, dc *models.Doma
 			TargetPattern: "",
 		})
 		models.PostProcessRecords(dom.Records)
-		rtypecontrol.FixLegacyDC(dom)
+		dom.FixLegacyDC()
 		dom2, _ := dom.Copy()
 
 		if err := providers.AuditRecords(*providerFlag, dom.Records); err != nil {
@@ -291,7 +292,7 @@ func makeChanges(t *testing.T, prv providers.DNSServiceProvider, dc *models.Doma
 
 func runTests(t *testing.T, prv providers.DNSServiceProvider, domainName string, origConfig map[string]string) {
 	dc := getDomainConfigWithNameservers(t, prv, domainName)
-	globalDCN = dc.DomainNameVarieties()
+	globalDC = dc
 
 	testGroups := makeTests()
 
@@ -405,14 +406,14 @@ func azureAlias(name, aliasType, target string) *models.RecordConfig {
 	r.AzureAlias = map[string]string{
 		"type": aliasType,
 	}
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
 func caa(name string, flag uint8, tag string, target string) *models.RecordConfig {
 	r := makeRec(name, target, "CAA")
 	panicOnErr(r.SetTargetCAA(flag, tag, target))
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
@@ -456,14 +457,9 @@ func cfSingleRedirectEnabled() bool {
 }
 
 func cfSingleRedirect(name string, code any, when, then string) *models.RecordConfig {
-	rec, err := rtypecontrol.NewRecordConfigFromRaw(rtypecontrol.FromRawOpts{
-		Type: "CLOUDFLAREAPI_SINGLE_REDIRECT",
-		TTL:  1,
-		Args: []any{name, code, when, then},
-		DCN:  globalDCN,
-	})
+	r, err := globalDC.NewRecordConfig("@", defaultTTL, privatetypes.TypeCLOUDFLAREAPISINGLEREDIRECT, name, code, when, then)
 	panicOnErr(err)
-	return rec
+	return r
 }
 
 func cfWorkerRoute(pattern, target string) *models.RecordConfig {
@@ -529,10 +525,8 @@ func dname(name, target string) *models.RecordConfig {
 }
 
 func ds(name string, keyTag uint16, algorithm, digestType uint8, digest string) *models.RecordConfig {
-	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, defaultTTL, dnsv2.TypeDS, keyTag, algorithm, digestType, digest)
-	if err != nil {
-		panic(err)
-	}
+	r, err := globalDC.NewRecordConfig(name, defaultTTL, dnsv2.TypeDS, keyTag, algorithm, digestType, digest)
+	panicOnErr(err)
 	return r
 }
 
@@ -543,12 +537,7 @@ func dnskey(name string, flags uint16, protocol, algorithm uint8, publicKey stri
 }
 
 func https(name string, priority uint16, target string, params string) *models.RecordConfig {
-	// r := makeRec(name, target, "HTTPS")
-	// r.SvcPriority = priority
-	// r.SvcParams = params
-	// r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
-
-	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, defaultTTL, dnsv2.TypeHTTPS, priority, target, params)
+	r, err := globalDC.NewRecordConfig(name, defaultTTL, dnsv2.TypeHTTPS, priority, target, params)
 	if err != nil {
 		panic(err)
 	}
@@ -572,7 +561,7 @@ func ignore(labelSpec string, typeSpec string, targetSpec string) *models.Record
 	r.Metadata["ignore_LabelPattern"] = labelSpec
 	r.Metadata["ignore_RTypePattern"] = typeSpec
 	r.Metadata["ignore_TargetPattern"] = targetSpec
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
@@ -581,13 +570,13 @@ func loc(name string, d1 uint8, m1 uint8, s1 float32, ns string,
 ) *models.RecordConfig {
 	r := makeRec(name, "", "LOC")
 	panicOnErr(r.SetLOCParams(d1, m1, s1, ns, d2, m2, s2, ew, al, sz, hp, vp))
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
 func makeRecAndFix(name, target, typ string) *models.RecordConfig {
 	r := makeRec(name, target, typ)
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
@@ -612,7 +601,7 @@ func manyA(namePattern, target string, n int) []*models.RecordConfig {
 func mx(name string, prio uint16, target string) *models.RecordConfig {
 	r := makeRec(name, target, "MX")
 	r.MxPreference = prio
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
@@ -623,7 +612,7 @@ func ns(name, target string) *models.RecordConfig {
 func naptr(name string, order uint16, preference uint16, flags string, service string, regexp string, target string) *models.RecordConfig {
 	r := makeRec(name, target, "NAPTR")
 	panicOnErr(r.SetTargetNAPTR(order, preference, flags, service, regexp, target))
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
@@ -643,7 +632,7 @@ func r53alias(name, aliasType, target, evalTargetHealth string) *models.RecordCo
 		"type":                   aliasType,
 		"evaluate_target_health": evalTargetHealth,
 	}
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
@@ -653,26 +642,20 @@ func r53weighted(name, target, rtype string, weight int, setID string) *models.R
 		"r53_weight":         fmt.Sprintf("%d", weight),
 		"r53_set_identifier": setID,
 	}
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
 func rp(name string, m, t string) *models.RecordConfig {
-	rec, err := rtypecontrol.NewRecordConfigFromRaw(rtypecontrol.FromRawOpts{
-		Type: "RP",
-		TTL:  defaultTTL,
-		Args: []any{name, m, t},
-		DCN:  globalDCN,
-	})
+	r, err := globalDC.NewRecordConfig(name, defaultTTL, dnsv2.TypeRP, m, t)
 	panicOnErr(err)
-	rec.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
-	return rec
+	return r
 }
 
 func smimea(name string, usage, selector, matchingtype uint8, target string) *models.RecordConfig {
 	r := makeRec(name, target, "SMIMEA")
 	panicOnErr(r.SetTargetSMIMEA(usage, selector, matchingtype, target))
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
@@ -690,7 +673,7 @@ func soa(name string, ns, mbox string, serial, refresh, retry, expire, minttl ui
 		Expire:  expire,
 		Minttl:  minttl,
 	}
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 
 	return r
 }
@@ -698,19 +681,19 @@ func soa(name string, ns, mbox string, serial, refresh, retry, expire, minttl ui
 func srv(name string, priority, weight, port uint16, target string) *models.RecordConfig {
 	r := makeRec(name, target, "SRV")
 	panicOnErr(r.SetTargetSRV(priority, weight, port, target))
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
 func sshfp(name string, algorithm uint8, fingerprint uint8, target string) *models.RecordConfig {
 	r := makeRec(name, target, "SSHFP")
 	panicOnErr(r.SetTargetSSHFP(algorithm, fingerprint, target))
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
 func svcb(name string, priority uint16, target string, params string) *models.RecordConfig {
-	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, defaultTTL, dnsv2.TypeSVCB, priority, target, params)
+	r, err := globalDC.NewRecordConfig(name, defaultTTL, dnsv2.TypeSVCB, priority, target, params)
 	if err != nil {
 		panic(err)
 	}
@@ -734,7 +717,7 @@ func makeOvhNativeRecord(name, target, rType string) *models.RecordConfig {
 	r.Metadata = make(map[string]string)
 	r.Metadata["create_ovh_native_record"] = rType
 	r.MustSetTarget(target)
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
@@ -813,7 +796,7 @@ func tc(desc string, recs ...*models.RecordConfig) *TestCase {
 func txt(name, target string) *models.RecordConfig {
 	r := makeRec(name, "", "TXT")
 	panicOnErr(r.SetTargetTXT(target))
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
+	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
 
@@ -824,7 +807,7 @@ func ttl(r *models.RecordConfig, t uint32) *models.RecordConfig {
 }
 
 func tlsa(name string, usage, selector, matchingtype uint8, target string) *models.RecordConfig {
-	r, err := models.NewRecordConfig(globalDCN.NameASCII, name, defaultTTL, dnsv2.TypeTLSA, usage, selector, matchingtype, target)
+	r, err := globalDC.NewRecordConfig(name, defaultTTL, dnsv2.TypeTLSA, usage, selector, matchingtype, target)
 	if err != nil {
 		panic(err)
 	}
@@ -832,17 +815,20 @@ func tlsa(name string, usage, selector, matchingtype uint8, target string) *mode
 }
 
 func porkbunUrlfwd(name, target, t, includePath, wildcard string) *models.RecordConfig {
-	r := makeRec(name, target, "PORKBUN_URLFWD")
-	r.Metadata = make(map[string]string)
-	r.Metadata["type"] = t
-	r.Metadata["includePath"] = includePath
-	r.Metadata["wildcard"] = wildcard
-	r.FixUp(globalDCN.NameASCII) // Hack. Populates .RDATA and .TypeNum if needed.
-	return r
+	rc, err := globalDC.NewRecordConfig(name, defaultTTL, privatetypes.TypePORKBUNURLFWD, target, t, includePath, wildcard)
+	if err != nil {
+		panic(err)
+	}
+	// rc.Metadata = map[string]string{
+	// 	"type":        t,
+	// 	"includePath": includePath,
+	// 	"wildcard":    wildcard,
+	// }
+	return rc
 }
 
 func url(name, target string) *models.RecordConfig {
-	rc, err := models.NewRecordConfig(globalDCN.NameASCII, name, defaultTTL, privatetypes.TypeURL, target, false, false)
+	rc, err := globalDC.NewRecordConfig(name, defaultTTL, privatetypes.TypeURL, target, false, false)
 	if err != nil {
 		panic(err)
 	}
@@ -850,7 +836,7 @@ func url(name, target string) *models.RecordConfig {
 }
 
 func url301(name, target string) *models.RecordConfig {
-	rc, err := models.NewRecordConfig(globalDCN.NameASCII, name, defaultTTL, privatetypes.TypeURL301, target, false, false)
+	rc, err := globalDC.NewRecordConfig(name, defaultTTL, privatetypes.TypeURL301, target, false, false)
 	if err != nil {
 		panic(err)
 	}

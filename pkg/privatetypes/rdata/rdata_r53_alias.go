@@ -16,20 +16,22 @@ type R53ALIAS struct {
 }
 
 func (rd R53ALIAS) Len() int {
-	return len(rd.AliasType) +
-		1 + len(rd.Target) +
-		1 + len(rd.EvalTargetHealth) +
-		1 + len(rd.ZoneID)
+	return len(rd.String())
 }
 
 func (rd R53ALIAS) String() string {
 	return txtutil.Zoneify([]string{rd.AliasType, rd.Target, rd.EvalTargetHealth, rd.ZoneID})
 }
 
-func MakeR53ALIAS(origin string, args ...any) (dnsv2.RDATA, error) {
+func MakeR53ALIAS(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
+	mustbe.ValidArgs(args)
 	if len(args) != 4 {
 		return R53ALIAS{}, fmt.Errorf("R53_ALIAS expects 4 arguments, got %d: %+v", len(args), args)
 	}
-	return R53ALIAS{mustbe.RawString(args[0]), mustbe.RawString(args[1]), mustbe.RawString(args[2]), mustbe.RawString(args[3])}, nil
-	// TODO(tlim): Could these be validated more? For example, the first argument should be one of "A", "AAAA", "CNAME", "MX", "NS", "PTR", "SPF", "SRV", or "TXT". The third argument should be either "true" or "false".
+	return R53ALIAS{
+		AliasType:        mustbe.RawString(args[0]),
+		Target:           mustbe.TargetHost(origin, args[1]),
+		EvalTargetHealth: mustbe.RawString(args[2]),
+		ZoneID:           mustbe.RawString(args[3]),
+	}, nil
 }

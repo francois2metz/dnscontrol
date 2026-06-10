@@ -74,6 +74,7 @@ type DomainConfig struct {
 
 func NewDomainConfig(name string) (*DomainConfig, error) {
 	dcn := domaintags.MakeDomainNameVarieties(name) // TODO(tlim): Create a version of MakeDomainNameVarieties that returns an error on failure.
+	//dcn := domaintags.DomainNameVarieties{NameASCII: name}
 	dc := &DomainConfig{
 		NameRaw:     dcn.NameRaw,
 		Name:        dcn.NameASCII,
@@ -93,6 +94,22 @@ func NewDomainConfig(name string) (*DomainConfig, error) {
 	return dc, nil
 }
 
+// FixLegacyDC calls .FixUp() on all records within DC.
+func (dc *DomainConfig) FixLegacyDC() {
+	dc.Records.FixLegacyRecords(dc.Name)
+}
+
+// FixLegacyDC calls .FixUp() on all records in recs.
+func (recs Records) FixLegacyRecords(origin string) {
+	for _, rec := range recs {
+		rec.FixUp(origin)
+	}
+}
+
+//func FixLegacyRecord(rec *models.RecordConfig, origin string) {
+//	rec.FixUp(origin) // Hack. Populates .RDATA and .TypeNum if needed.
+//}
+
 // PostProcess performs and post-processing required after running dnsconfig.js and loading the result.
 // It is called by dns.go's PostProcess() function.
 func (dc *DomainConfig) PostProcess() {
@@ -102,7 +119,7 @@ func (dc *DomainConfig) PostProcess() {
 	}
 
 	//  HACK: Fill in names (This means models.NewDomainConfig() was not used.  We can eliminate this when legacy code is removed.
-	ff := domaintags.MakeDomainNameVarieties(dc.Name)
+	ff := domaintags.MakeDomainNameVarieties(dc.Name) // FIXME: Slow.  Call only if needed.
 	if dc.Tag == "" {
 		dc.Tag = ff.Tag
 	}
@@ -165,6 +182,7 @@ func (dc *DomainConfig) Filter(f func(r *RecordConfig) bool) {
 // - Name
 // - NameFQDN
 // - Target (CNAME and MX only).
+// NOTE: This will go away when RCv3 is adopted.
 func (dc *DomainConfig) Punycode() error {
 	for _, rec := range dc.Records {
 		if rec.IsModernType() {
@@ -193,7 +211,9 @@ func (dc *DomainConfig) Punycode() error {
 			if err := rec.SetTarget(rec.GetTargetField()); err != nil {
 				return err
 			}
-		case "A", "AAAA", "CAA", "DHCID", "DNSKEY", "DS", "HTTPS", "LOC", "LUA", "NAPTR", "OPENPGPKEY", "SMIMEA", "SOA", "SSHFP", "SVCB", "TXT", "TLSA", "AZURE_ALIAS":
+		case "A", "AAAA", "CAA", "DHCID", "DNSKEY", "DS", "HTTPS", "LOC",
+			"LUA", "NAPTR", "OPENPGPKEY", "RP", "SMIMEA", "SOA", "SSHFP", "SVCB",
+			"TXT", "TLSA", "AZURE_ALIAS":
 			// Nothing to do.
 		default:
 			return fmt.Errorf("Punycode rtype %v unimplemented", rec.Type)

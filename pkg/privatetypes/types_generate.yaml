@@ -1,0 +1,223 @@
+---
+# 65280 to 65534
+types:
+  - name: Adguardhome_A_Passthrough
+    codepoint: 65280
+    fields: []
+    test_data: []
+
+  - name: Adguardhome_AAAA_Passthrough
+    codepoint: 65281
+    fields: []
+    test_data: []
+
+  - name: Akamaicdn
+    codepoint: 65282
+    fields:
+      - name: Target
+        type: TargetHost
+    test_data:
+      - name: ""
+        values:
+          Target: example.com.
+
+  - name: Akamaitlc
+    codepoint: 65284
+    fields:
+      - name: AnswerType
+        type: RawString
+      - name: Target
+        type: TargetHost
+    test_data:
+      - name: ""
+        values:
+          AnswerType: cname
+          Target: example.com.
+
+  - name: Alias
+    codepoint: 65285
+    fields:
+      - name: Target
+        type: TargetHost
+    test_data:
+      - name: ""
+        values:
+          Target: example.com.
+
+  - name: Azure_Alias
+    codepoint: 65286
+    fields:
+      - name: AliasType
+        type: RawString
+      - name: Target
+        type: TargetHost
+    test_data:
+      - name: ""
+        values:
+          AliasType: A
+          Target: example.com.
+
+  - name: Bunny_Dns_Pz
+    codepoint: 65287
+    fields: []
+    test_data: []
+
+  - name: Bunny_Dns_Rdr
+    codepoint: 65320
+    fields: []
+    test_data: []
+
+  - name: Cf_Worker_Route
+    codepoint: 65288
+    fields:
+      - name: When
+        type: RawString
+      - name: Then
+        type: RawString
+    test_data:
+      - name: ""
+        values:
+          When: whenWhen
+          Then: ThenThen
+
+  - name: Cloudflareapi_Single_Redirect
+    codepoint: 65289
+    fields:
+      - name: SRName
+        type: RawString
+      - name: Code
+        type: Uint16
+      - name: SRWhen
+        type: RawString
+      - name: SRThen
+        type: RawString
+
+    test_data:
+      - name: ""
+        values:
+          Name: first_rule
+          Code: 301
+          When: when_string
+          Then: then_string
+
+  - name: Cloudns_Wr
+    codepoint: 65290
+    fields:
+      - name: Target
+        type: RawString
+    test_data:
+      - name: ""
+        values:
+          Target: example.com.
+
+  - name: Frame
+    codepoint: 65291
+    fields:
+      - name: Target
+        type: RawString
+    test_data:
+      - name: ""
+        values:
+          Target: example.com.
+
+  - name: Lua
+    codepoint: 65292
+    fields:
+      - name: LuaType
+        type: RawString
+      - name: LuaPayload
+        type: RawString
+    test_data:
+      - name: ""
+        values:
+          LuaType: A
+          LuaPayload: return_127_0_0_1
+
+  - name: Mikrotik_Fwd
+    codepoint: 65293
+    fields:
+      - name: ForwardTo
+        type: RawString
+    test_data:
+      - name: ""
+        values:
+          ForwardTo: example.com.
+
+  - name: Mikrotik_Nxdomain
+    codepoint: 65294
+    fields: []
+    test_data: []
+
+  - name: Netlify
+    codepoint: 65295
+    fields: []
+    test_data: []
+
+  - name: Netlifyv6
+    codepoint: 65296
+    fields: []
+    test_data: []
+
+  - name: Porkbun_Urlfwd
+    codepoint: 65297
+    fields:
+      - name: Target
+        type: RawString
+      - name: TypeName
+        type: RawString
+      - name: IncludePath
+        type: RawString
+      - name: Wildcard
+        type: RawString
+    test_data: []
+
+  - name: R53_Alias
+    codepoint: 65298
+    fields:
+      - name: AliasType
+        type: RawString
+      - name: Target
+        type: TargetHost
+      - name: EvalTargetHealth
+        type: RawString
+      - name: ZoneID
+        type: RawString
+    test_data:
+      - name: normal_user
+        values:
+          AliasType: 1
+          Target: alice.
+          EvalTargetHealth: true
+          ZoneID: 1234
+
+  - name: Url
+    codepoint: 65299
+    fields:
+      - name: Location
+        type: RawString
+      - name: PorkbunIncludePath
+        type: Bool
+      - name: PorkbunWildCard
+        type: Bool
+    test_data:
+      - name: ""
+        values:
+          Location: https://example.com/
+          PorkbunIncludePath: true
+          PorkbunWildCard: false
+
+  - name: Url301
+    codepoint: 65300
+    fields:
+      - name: Location
+        type: TargetHost
+      - name: PorkbunIncludePath
+        type: Bool
+      - name: PorkbunWildCard
+        type: Bool
+    test_data:
+      - name: ""
+        values:
+          Location: example.com.
+          PorkbunIncludePath: true
+          PorkbunWildCard: false
