@@ -90,20 +90,6 @@ dc.AddRecordConfig(models.MakeTestRCParse(label, ttl, type, args))          doma
 
 Thoughts:
 
-It's useless to add Metadata to Make*() functions.  Nobody uses it.
-Or, maybe it is.  URL(), R53_ALIAS() and others use it.
-Solutions:
-1. How about putting Metadata earlier?  Make*(origin, metadata, args)
-
-
-Problem:
-"args ...any" is a footgun, allowing people to send a list with 1 item if they aren't careful.
-Solutions:
-    Check for len(args)==1 && arg[0].(type) is []any.
-    We should do this everywhere "...any" is used.
-
-
-
 ALSO:
 Let's get rid of the old fields in RecordConfig faster!
 NameRaw
@@ -115,9 +101,3 @@ ZonefilePartial
         R53Alias           map[string]string `json:"r53_alias,omitempty"`
         AzureAlias         map[string]string `json:"azure_alias,omitempty"`
         AnswerType         string            `json:"answer_type,omitempty"`
-
-
-TODO: Why is MakeCFREDIRECT failing???
-
-
-
