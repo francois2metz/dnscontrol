@@ -169,7 +169,25 @@ types:
         type: RawString
       - name: Wildcard
         type: RawString
-    test_data: []
+    test_data:
+      - name: "plain"
+        values:
+          Target: http://example.com
+          TypeName: urlfwd
+          IncludePath: no
+          Wildcard: no
+      - name: "with metadata"
+        values:
+          Target: http://example.com
+          TypeName: urlfwd
+          IncludePath: permanent
+          Wildcard: no
+      - name: "with wildcard"
+        values:
+          Target: http://example.com
+          TypeName: urlfwd
+          IncludePath: no
+          Wildcard: yes
 
   - name: R53_Alias
     codepoint: 65298
