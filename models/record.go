@@ -163,7 +163,7 @@ func (dc *DomainConfig) NewRecordConfig(name string, ttl uint32, typeAny any, ar
 	//rd, err := privatetypes.TypeToMakeRDATA[typeNum](dc.Name, args...)
 	f, ok := privatetypes.TypeToMakeRDATA[typeNum]
 	if !ok {
-		return nil, fmt.Errorf("NewRecordConfig: failed TypeToMakeRDATA[%d] == nil\n", typeNum)
+		return nil, fmt.Errorf("NewRecordConfig: failed TypeToMakeRDATA[%d] == nil", typeNum)
 	}
 	rd, err := f(dc.Name, nil, args...)
 	if err != nil {
@@ -186,7 +186,7 @@ func (dc *DomainConfig) NewRecordConfigParse(name string, ttl uint32, typeAny an
 	return newRecordConfigHelper(dc.Name, name, ttl, typeNum, rd, nil)
 }
 
-// NewRecordConfigForRRtoRC is only for use by dnsrr.go.
+// NewRecordConfigFromDnsconfigjs is only for use by dnsrr.go.
 func (dc *DomainConfig) NewRecordConfigFromDnsconfigjs(name string, ttl uint32, typeNum uint16, args []any, metadata map[string]string) (*RecordConfig, error) {
 
 	rd, err := privatetypes.TypeToMakeRDATA[typeNum](dc.Name, metadata, args...)

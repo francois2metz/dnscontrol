@@ -99,7 +99,7 @@ func (dc *DomainConfig) FixLegacyDC() {
 	dc.Records.FixLegacyRecords(dc.Name)
 }
 
-// FixLegacyDC calls .FixUp() on all records in recs.
+// FixLegacyRecords calls .FixUp() on all records in recs.
 func (recs Records) FixLegacyRecords(origin string) {
 	for _, rec := range recs {
 		rec.FixUp(origin)
