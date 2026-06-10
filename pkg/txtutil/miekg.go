@@ -82,7 +82,7 @@ func ZoneifyString(s string) string {
 func ZoneifyManyAny(args []any) string {
 	n := make([]string, len(args))
 	for i, arg := range args {
-		n[i] = fmt.Sprintf("%s", arg)
+		n[i] = fmt.Sprint(arg)
 	}
 	return Zoneify(n)
 }
@@ -109,24 +109,15 @@ func isPlain(s string) bool {
 	for _, r := range s {
 		// continue if we are safe: a-z A-Z 0-9 . @ *
 
-		if r >= 'a' && r <= 'z' {
+		if (r >= 'a' && r <= 'z') ||
+			(r >= 'A' && r <= 'Z') ||
+			(r >= '0' && r <= '9') ||
+			(r == '.') ||
+			(r == '@') ||
+			(r == '*') {
 			continue
 		}
-		if r >= 'A' && r <= 'Z' {
-			continue
-		}
-		if r >= '0' && r <= '9' {
-			continue
-		}
-		if r == '.' {
-			continue
-		}
-		if r == '@' {
-			continue
-		}
-		if r == '*' {
-			continue
-		}
+		// it isn't any of those. We are NOT plain.
 		return false
 	}
 	return true

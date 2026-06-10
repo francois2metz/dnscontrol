@@ -14,8 +14,8 @@ func TestZoneify(t *testing.T) {
 		want string
 	}{
 		{"simple", []string{`simple`}, `"simple"`},
-		{"fqdn", []string{`example.com.`}, `example.com.`},
 		{"example", []string{`one`, `two`, `3`, `f&&r`, `f ve`}, `"one" "two" "3" "f&&r" "f ve"`},
+		{"fqdn", []string{`example.com.`}, `"example.com."`},
 		{"space", []string{`with space`}, `"with space"`},
 		{"quote", []string{`with'quote`}, `"with'quote"`},
 		{"dquote", []string{`with"dquote`}, `"with\"dquote"`},
@@ -41,6 +41,7 @@ func TestZoneifyQuotesOnlyIfNeeded(t *testing.T) {
 		want string
 	}{
 		{"simple", []string{`simple`}, `simple`},
+		{"fqdn", []string{`example.com.`}, `example.com.`},
 		{"example", []string{`one`, `two`, `3`, `f&&r`, `f ve`}, `one two 3 "f&&r" "f ve"`},
 		{"dots", []string{`do.ts`}, `do.ts`},
 		{"at", []string{`@`}, `@`},
