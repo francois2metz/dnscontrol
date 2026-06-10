@@ -3,9 +3,10 @@ package privatetypesrdata
 import (
 	"fmt"
 
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
-	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
 )
 
 type URL301 struct {
@@ -19,7 +20,11 @@ func (rd URL301) Len() int {
 }
 
 func (rd URL301) String() string {
-	return txtutil.Zoneify([]string{rd.Location, fmt.Sprintf("%t", rd.PorkbunIncludePath), fmt.Sprintf("%t", rd.PorkbunWildCard)})
+	parts := make([]string, 0, 3)
+	parts = append(parts, rd.Location)
+	parts = append(parts, fmt.Sprintf("%t", rd.PorkbunIncludePath))
+	parts = append(parts, fmt.Sprintf("%t", rd.PorkbunWildCard))
+	return strings.Join(parts, " ")
 }
 
 func MakeURL301(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {

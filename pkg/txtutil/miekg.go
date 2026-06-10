@@ -12,7 +12,7 @@ var builderPool = pool.NewBuilder()
 
 // ZoneifyQuoted prints strings, each individually quoted and escaped, as used by Txt records.
 // However, this is also useful for spewing untrusted data into a zonefile, or URLs and other things that private types might want to use.
-// Example: []string{"one", "two", "three"} outputs: `"one" "two" "three"`
+// Example: []string{"one", "tw o", "three"} outputs: `"one" "tw o" "three"`.
 // TODO: Request to upstream this and make it a public function in miekg/dns, and then remove this code from dnscontrol.
 // TODO: Harden this so that it works with all possible strings, including backslashes, binary data, etc.
 func ZoneifyQuoted(txt []string) string {
@@ -42,7 +42,7 @@ func ZoneifyQuoted(txt []string) string {
 // Zoneify is like ZoneifyQuoted, but omits the quotes when not needed. (Note:
 // It might quote things that don't strictly need quoting, but it won't fail to
 // quote things that do need quoting.)
-// Example: []string{"one", "two", "three"} outputs: `"one" "two" "three"`.
+// Example: []string{"one", "tw o", "three"} outputs: `one "t wo" three`.
 func Zoneify(txt []string) string {
 	sb := builderPool.Get()
 	defer builderPool.Put(sb)

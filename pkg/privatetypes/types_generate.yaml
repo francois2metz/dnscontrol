@@ -95,10 +95,10 @@ types:
     test_data:
       - name: ""
         values:
-          Name: first_rule
+          SRName: first_rule
           Code: 301
-          When: when_string
-          Then: then_string
+          SRWhen: when_string
+          SRThen: then_string
 
   - name: Cloudns_Wr
     codepoint: 65290

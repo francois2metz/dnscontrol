@@ -84,6 +84,16 @@ func anyNonString(fields []FieldDef) bool {
 	return false
 }
 
+// needsTxtutil returns true if any field requires txtutil functions.
+func needsTxtutil(fields []FieldDef) bool {
+	for _, f := range fields {
+		if f.Type == "RawString" {
+			return true
+		}
+	}
+	return false
+}
+
 // fieldStringExpr returns a Go expression that converts the named field to a string for printing.
 func fieldStringExpr(receiver string, f FieldDef) string {
 	ti := info(f.Type)
@@ -169,6 +179,7 @@ func toFileName(name string) string {
 }
 
 func camelCaseFromSnake(s string) string {
+	s = strings.ReplaceAll(s, " ", "_")
 	parts := strings.Split(s, "_")
 	var result []string
 	for _, part := range parts {
@@ -431,8 +442,11 @@ func generateRdataFile(t *TypeDef) error {
 	buf.WriteString("\tdnsv2 \"codeberg.org/miekg/dns\"\n")
 	buf.WriteString("\t\"github.com/DNSControl/dnscontrol/v4/pkg/mustbe\"\n")
 
-	if len(t.Fields) > 0 {
+	if needsTxtutil(t.Fields) {
 		buf.WriteString("\t\"github.com/DNSControl/dnscontrol/v4/pkg/txtutil\"\n")
+	}
+	if len(t.Fields) > 0 {
+		buf.WriteString("\t\"strings\"\n")
 	}
 
 	buf.WriteString(")\n\n")
@@ -455,19 +469,35 @@ func generateRdataFile(t *TypeDef) error {
 	}
 	buf.WriteString("}\n\n")
 
-	// String: Zoneify the field values.
+	// String: build a space-separated textual representation of the fields.
 	fmt.Fprintf(&buf, "func (rd %s) String() string {\n", typeName)
 	if len(t.Fields) == 0 {
 		buf.WriteString("\treturn \"\"\n")
 	} else {
-		buf.WriteString("\treturn txtutil.Zoneify([]string{")
-		for i, f := range t.Fields {
-			if i > 0 {
-				buf.WriteString(", ")
+		fmt.Fprintf(&buf, "\tparts := make([]string, 0, %d)\n", len(t.Fields))
+		for _, f := range t.Fields {
+			// Special-case behaviors requested by generator requirements.
+			switch f.Type {
+			case "RawString":
+				fmt.Fprintf(&buf, "\tparts = append(parts, txtutil.ZoneifyString(rd.%s))\n", f.Name)
+			case "TargetHost":
+				fmt.Fprintf(&buf, "\tparts = append(parts, rd.%s)\n", f.Name)
+			default:
+				ti := info(f.Type)
+				if ti.NeedsNetip {
+					fmt.Fprintf(&buf, "\tparts = append(parts, rd.%s.String())\n", f.Name)
+				} else if ti.GoType == "bool" {
+					fmt.Fprintf(&buf, "\tparts = append(parts, fmt.Sprintf(\"%%t\", rd.%s))\n", f.Name)
+				} else if !ti.IsString {
+					// numeric types: Uint8/16/32 -> decimal
+					fmt.Fprintf(&buf, "\tparts = append(parts, fmt.Sprintf(\"%%d\", rd.%s))\n", f.Name)
+				} else {
+					// other string-like types
+					fmt.Fprintf(&buf, "\tparts = append(parts, rd.%s)\n", f.Name)
+				}
 			}
-			buf.WriteString(fieldStringExpr("rd", f))
 		}
-		buf.WriteString("})\n")
+		buf.WriteString("\treturn strings.Join(parts, \" \")\n")
 	}
 	buf.WriteString("}\n\n")
 

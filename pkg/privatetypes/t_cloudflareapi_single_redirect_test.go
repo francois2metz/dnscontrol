@@ -11,10 +11,10 @@ func TestCloudflareapiSingleRedirect(t *testing.T) {
 	y := &CLOUDFLAREAPISINGLEREDIRECT{
 		Hdr: dnsv2.Header{Name: "example.org.", Class: dnsv2.ClassINET},
 		CLOUDFLAREAPISINGLEREDIRECT: privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT{
-			SRName: "",
+			SRName: "first_rule",
 			Code:   301,
-			SRWhen: "",
-			SRThen: "",
+			SRWhen: "when_string",
+			SRThen: "then_string",
 		},
 	}
 	rry, err := dnsv2.New(y.String())

@@ -3,6 +3,8 @@ package privatetypesrdata
 import (
 	"fmt"
 
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
@@ -17,7 +19,9 @@ func (rd CLOUDNSWR) Len() int {
 }
 
 func (rd CLOUDNSWR) String() string {
-	return txtutil.Zoneify([]string{rd.Target})
+	parts := make([]string, 0, 1)
+	parts = append(parts, txtutil.ZoneifyString(rd.Target))
+	return strings.Join(parts, " ")
 }
 
 func MakeCLOUDNSWR(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {

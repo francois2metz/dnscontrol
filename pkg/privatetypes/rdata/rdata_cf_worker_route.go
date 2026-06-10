@@ -3,6 +3,8 @@ package privatetypesrdata
 import (
 	"fmt"
 
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
@@ -18,7 +20,10 @@ func (rd CFWORKERROUTE) Len() int {
 }
 
 func (rd CFWORKERROUTE) String() string {
-	return txtutil.Zoneify([]string{rd.When, rd.Then})
+	parts := make([]string, 0, 2)
+	parts = append(parts, txtutil.ZoneifyString(rd.When))
+	parts = append(parts, txtutil.ZoneifyString(rd.Then))
+	return strings.Join(parts, " ")
 }
 
 func MakeCFWORKERROUTE(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {

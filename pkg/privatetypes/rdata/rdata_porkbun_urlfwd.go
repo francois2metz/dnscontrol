@@ -3,6 +3,8 @@ package privatetypesrdata
 import (
 	"fmt"
 
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
@@ -20,7 +22,12 @@ func (rd PORKBUNURLFWD) Len() int {
 }
 
 func (rd PORKBUNURLFWD) String() string {
-	return txtutil.Zoneify([]string{rd.Target, rd.TypeName, rd.IncludePath, rd.Wildcard})
+	parts := make([]string, 0, 4)
+	parts = append(parts, txtutil.ZoneifyString(rd.Target))
+	parts = append(parts, txtutil.ZoneifyString(rd.TypeName))
+	parts = append(parts, txtutil.ZoneifyString(rd.IncludePath))
+	parts = append(parts, txtutil.ZoneifyString(rd.Wildcard))
+	return strings.Join(parts, " ")
 }
 
 func MakePORKBUNURLFWD(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {

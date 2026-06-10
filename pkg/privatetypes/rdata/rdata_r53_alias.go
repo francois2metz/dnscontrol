@@ -3,6 +3,8 @@ package privatetypesrdata
 import (
 	"fmt"
 
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
@@ -20,7 +22,12 @@ func (rd R53ALIAS) Len() int {
 }
 
 func (rd R53ALIAS) String() string {
-	return txtutil.Zoneify([]string{rd.AliasType, rd.Target, rd.EvalTargetHealth, rd.ZoneID})
+	parts := make([]string, 0, 4)
+	parts = append(parts, txtutil.ZoneifyString(rd.AliasType))
+	parts = append(parts, rd.Target)
+	parts = append(parts, txtutil.ZoneifyString(rd.EvalTargetHealth))
+	parts = append(parts, txtutil.ZoneifyString(rd.ZoneID))
+	return strings.Join(parts, " ")
 }
 
 func MakeR53ALIAS(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {

@@ -284,6 +284,16 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 			rc.Metadata["type"] = p.TypeName
 			rc.Metadata["includePath"] = p.IncludePath
 			rc.Metadata["wildcard"] = p.Wildcard
+		case "R53_ALIAS":
+			p := rd.(privatetypesrdata.R53ALIAS)
+			if rc.R53Alias == nil {
+				rc.R53Alias = map[string]string{}
+			}
+			rc.R53Alias["type"] = p.AliasType
+			rc.SetTarget(p.Target)
+			rc.R53Alias["zone_id"] = p.ZoneID
+			rc.R53Alias["evaluate_target_health"] = p.EvalTargetHealth
+
 		case "URL":
 			u := rd.(privatetypesrdata.URL)
 			rc.SetTarget(u.Location)

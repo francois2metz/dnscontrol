@@ -3,6 +3,8 @@ package privatetypesrdata
 import (
 	"fmt"
 
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
@@ -18,7 +20,10 @@ func (rd LUA) Len() int {
 }
 
 func (rd LUA) String() string {
-	return txtutil.Zoneify([]string{rd.LuaType, rd.LuaPayload})
+	parts := make([]string, 0, 2)
+	parts = append(parts, txtutil.ZoneifyString(rd.LuaType))
+	parts = append(parts, txtutil.ZoneifyString(rd.LuaPayload))
+	return strings.Join(parts, " ")
 }
 
 func MakeLUA(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {

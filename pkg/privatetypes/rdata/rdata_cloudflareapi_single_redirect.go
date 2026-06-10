@@ -3,6 +3,8 @@ package privatetypesrdata
 import (
 	"fmt"
 
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
@@ -20,7 +22,12 @@ func (rd CLOUDFLAREAPISINGLEREDIRECT) Len() int {
 }
 
 func (rd CLOUDFLAREAPISINGLEREDIRECT) String() string {
-	return txtutil.Zoneify([]string{rd.SRName, fmt.Sprintf("%d", rd.Code), rd.SRWhen, rd.SRThen})
+	parts := make([]string, 0, 4)
+	parts = append(parts, txtutil.ZoneifyString(rd.SRName))
+	parts = append(parts, fmt.Sprintf("%d", rd.Code))
+	parts = append(parts, txtutil.ZoneifyString(rd.SRWhen))
+	parts = append(parts, txtutil.ZoneifyString(rd.SRThen))
+	return strings.Join(parts, " ")
 }
 
 func MakeCLOUDFLAREAPISINGLEREDIRECT(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {

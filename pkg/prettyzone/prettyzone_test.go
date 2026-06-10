@@ -424,9 +424,9 @@ func TestWriteZoneFileSynth(t *testing.T) {
 	dc.AddTestRC(t, "bosun.org.", 300, dnsv2.TypeA, "192.30.252.154")
 	dc.AddTestRC(t, "www.bosun.org.", 300, dnsv2.TypeCNAME, "bosun.org.")
 
-	dc.AddTestRC(t, "myalias", 300, privatetypes.TypeR53ALIAS, "A", "id123", "true")
-	dc.AddTestRC(t, "myalias", 300, privatetypes.TypeR53ALIAS, "A", "id123", "true")
-	dc.AddTestRC(t, "zalias", 300, privatetypes.TypeR53ALIAS, "A", "id123", "true")
+	dc.AddTestRC(t, "myalias", 300, privatetypes.TypeR53ALIAS, "foo1", "A", "id123", "true")
+	dc.AddTestRC(t, "myalias", 300, privatetypes.TypeR53ALIAS, "foo2", "A", "id123", "true")
+	dc.AddTestRC(t, "zalias", 300, privatetypes.TypeR53ALIAS, "foo3", "A", "id123", "true")
 
 	// var recs []dnsv2.RR
 	// for i, rc := range dc.Records {
