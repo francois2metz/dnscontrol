@@ -17,7 +17,10 @@
           "name_unicode": "@",
           "rdata": {
             "Code": 301,
+            "SRDisplay": "",
             "SRName": "301,test1.foo.com,https://goo.com/$1",
+            "SRRRulesetID": "",
+            "SRRRulesetRuleID": "",
             "SRThen": "concat(\"https://goo.com\", http.request.uri.path)",
             "SRWhen": "http.host eq \"test1.foo.com\" and http.request.uri.path eq \"/\""
           },
@@ -32,7 +35,10 @@
           "name_unicode": "@",
           "rdata": {
             "Code": 302,
+            "SRDisplay": "",
             "SRName": "302,test2.foo.com,https://goo.com/$1",
+            "SRRRulesetID": "",
+            "SRRRulesetRuleID": "",
             "SRThen": "concat(\"https://goo.com\", http.request.uri.path)",
             "SRWhen": "http.host eq \"test2.foo.com\" and http.request.uri.path eq \"/\""
           },

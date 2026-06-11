@@ -17,6 +17,7 @@ import (
 	"github.com/DNSControl/dnscontrol/v4/models"
 	"github.com/DNSControl/dnscontrol/v4/pkg/diff2"
 	"github.com/DNSControl/dnscontrol/v4/pkg/printer"
+	privatetypesrdata "github.com/DNSControl/dnscontrol/v4/pkg/privatetypes/rdata"
 	"github.com/DNSControl/dnscontrol/v4/pkg/providers"
 	"github.com/DNSControl/dnscontrol/v4/pkg/transform"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
@@ -392,7 +393,8 @@ func (c *cloudflareProvider) mkCreateCorrection(newrec *models.RecordConfig, dom
 		return []*models.Correction{{
 			Msg: msg,
 			F: func() error {
-				return c.createSingleRedirect(domainID, *newrec.F.(*cfsingleredirect.SingleRedirectConfig))
+				//return c.createSingleRedirect(domainID, *newrec.F.(*cfsingleredirect.SingleRedirectConfig))
+				return c.createSingleRedirect(domainID, *newrec.RDATA.(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT))
 			},
 		}}
 	default:
@@ -406,7 +408,7 @@ func (c *cloudflareProvider) mkChangeCorrection(oldrec, newrec *models.RecordCon
 	case "WORKER_ROUTE":
 		idTxt = oldrec.Original.(cloudflare.WorkerRoute).ID
 	case "CLOUDFLAREAPI_SINGLE_REDIRECT":
-		idTxt = oldrec.F.(*cfsingleredirect.SingleRedirectConfig).SRRRulesetID
+		idTxt = oldrec.RDATA.(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT).SRRRulesetID
 	default:
 		idTxt = oldrec.Original.(cloudflare.DNSRecord).ID
 	}
@@ -461,7 +463,7 @@ func (c *cloudflareProvider) mkDeleteCorrection(recType string, origRec *models.
 			case "WORKER_ROUTE":
 				return c.deleteWorkerRoute(origRec.Original.(cloudflare.WorkerRoute).ID, domainID)
 			case "CLOUDFLAREAPI_SINGLE_REDIRECT":
-				return c.deleteSingleRedirects(domainID, *origRec.F.(*cfsingleredirect.SingleRedirectConfig))
+				return c.deleteSingleRedirects(domainID, *origRec.RDATA.(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT))
 			default:
 				return c.deleteDNSRecord(origRec.Original.(cloudflare.DNSRecord), domainID)
 			}

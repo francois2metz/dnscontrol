@@ -15,16 +15,19 @@ import (
 
 // TypeDef represents a single type definition from the YAML
 type TypeDef struct {
-	Name      string        `yaml:"name"`
-	Codepoint int           `yaml:"codepoint"`
-	Fields    []FieldDef    `yaml:"fields"`
-	TestData  []TestDataDef `yaml:"test_data"`
+	Name          string        `yaml:"name"`
+	Codepoint     int           `yaml:"codepoint"`
+	Fields        []FieldDef    `yaml:"fields"`
+	RuntimeFields []FieldDef    `yaml:"runtimeFields"`
+	TestData      []TestDataDef `yaml:"test_data"`
 }
 
 // FieldDef represents a field within a type
 type FieldDef struct {
-	Name string `yaml:"name"`
-	Type string `yaml:"type"`
+	Name    string `yaml:"name"`
+	Type    string `yaml:"type"`
+	STag    string `yaml:"structag"`
+	Comment string `yaml:"comment"`
 }
 
 // TestDataDef represents test data for a type
@@ -209,7 +212,7 @@ func generateTypeFile(t *TypeDef) error {
 	buf.WriteString("import (\n")
 	buf.WriteString("\t\"fmt\"\n")
 	buf.WriteString("\t\"strconv\"\n")
-	if anyNeedsNetip(t.Fields) {
+	if anyNeedsNetip(t.Fields) || anyNeedsNetip(t.RuntimeFields) {
 		buf.WriteString("\t\"net/netip\"\n")
 	}
 	buf.WriteString("\n")
@@ -236,8 +239,8 @@ func generateTypeFile(t *TypeDef) error {
 	buf.WriteString("\tHdr dnsv2.Header\n\n")
 	fmt.Fprintf(&buf, "\tprivatetypesrdata.%s\n", typeName)
 
-	if len(t.Fields) > 0 {
-		for _, f := range t.Fields {
+	if len(t.Fields) > 0 || len(t.RuntimeFields) > 0 {
+		for _, f := range append(t.Fields, t.RuntimeFields...) {
 			fmt.Fprintf(&buf, "\t// %-20s %s\n", f.Name, info(f.Type).GoType)
 		}
 	}
@@ -256,14 +259,15 @@ func generateTypeFile(t *TypeDef) error {
 	} else {
 		buf.WriteString("\treturn rr.Hdr.Len() + rr.Data().Len()\n")
 	}
+	// NB(tlim): t.RuntimeFields are not included in the Len() calculation. This could change.
 	buf.WriteString("}\n")
 
 	fmt.Fprintf(&buf, "func (rr *%s) Data() dnsv2.RDATA {\n", typeName)
-	if len(t.Fields) == 0 {
+	if len(t.Fields) == 0 && len(t.RuntimeFields) == 0 {
 		fmt.Fprintf(&buf, "\treturn &privatetypesrdata.%s{}\n", typeName)
 	} else {
 		fmt.Fprintf(&buf, "\treturn &privatetypesrdata.%s{", typeName)
-		for i, f := range t.Fields {
+		for i, f := range append(t.Fields, t.RuntimeFields...) {
 			if i > 0 {
 				buf.WriteString(", ")
 			}
@@ -274,7 +278,7 @@ func generateTypeFile(t *TypeDef) error {
 	buf.WriteString("}\n")
 
 	fmt.Fprintf(&buf, "func (rr *%s) Clone() dnsv2.RR {\n", typeName)
-	if len(t.Fields) == 0 {
+	if len(t.Fields) == 0 && len(t.RuntimeFields) == 0 {
 		fmt.Fprintf(&buf, "\treturn &%s{\n", typeName)
 		buf.WriteString("\t\trr.Hdr,\n")
 		fmt.Fprintf(&buf, "\t\tprivatetypesrdata.%s{}}\n", typeName)
@@ -282,7 +286,7 @@ func generateTypeFile(t *TypeDef) error {
 		fmt.Fprintf(&buf, "\treturn &%s{\n", typeName)
 		buf.WriteString("\t\tHdr: rr.Hdr,\n")
 		fmt.Fprintf(&buf, "\t\t%s: privatetypesrdata.%s{\n", typeName, typeName)
-		for _, f := range t.Fields {
+		for _, f := range append(t.Fields, t.RuntimeFields...) {
 			fmt.Fprintf(&buf, "\t\t\t%s: rr.%s,\n", f.Name, f.Name)
 		}
 		buf.WriteString("\t\t}}\n")
@@ -435,17 +439,17 @@ func generateRdataFile(t *TypeDef) error {
 	buf.WriteString("package privatetypesrdata\n\n")
 	buf.WriteString("import (\n")
 	buf.WriteString("\t\"fmt\"\n")
-	if anyNeedsNetip(t.Fields) {
+	if anyNeedsNetip(t.Fields) || anyNeedsNetip(t.RuntimeFields) {
 		buf.WriteString("\t\"net/netip\"\n")
 	}
 	buf.WriteString("\n")
 	buf.WriteString("\tdnsv2 \"codeberg.org/miekg/dns\"\n")
 	buf.WriteString("\t\"github.com/DNSControl/dnscontrol/v4/pkg/mustbe\"\n")
 
-	if needsTxtutil(t.Fields) {
+	if needsTxtutil(t.Fields) || needsTxtutil(t.RuntimeFields) {
 		buf.WriteString("\t\"github.com/DNSControl/dnscontrol/v4/pkg/txtutil\"\n")
 	}
-	if len(t.Fields) > 0 {
+	if len(t.Fields) > 0 || len(t.RuntimeFields) > 0 {
 		buf.WriteString("\t\"strings\"\n")
 	}
 
@@ -456,6 +460,9 @@ func generateRdataFile(t *TypeDef) error {
 
 	fmt.Fprintf(&buf, "type %s struct {\n", typeName)
 	for _, f := range t.Fields {
+		fmt.Fprintf(&buf, "\t%-20s %s\n", f.Name, info(f.Type).GoType)
+	}
+	for _, f := range t.RuntimeFields {
 		fmt.Fprintf(&buf, "\t%-20s %s\n", f.Name, info(f.Type).GoType)
 	}
 	buf.WriteString("}\n\n")

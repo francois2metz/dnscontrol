@@ -8,8 +8,8 @@ import (
 
 	"github.com/DNSControl/dnscontrol/v4/models"
 	"github.com/DNSControl/dnscontrol/v4/pkg/privatetypes"
+	privatetypesrdata "github.com/DNSControl/dnscontrol/v4/pkg/privatetypes/rdata"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
-	"github.com/DNSControl/dnscontrol/v4/providers/cloudflare/rtypes/cfsingleredirect"
 	"github.com/cloudflare/cloudflare-go"
 	"golang.org/x/net/idna"
 )
@@ -376,7 +376,7 @@ func (c *cloudflareProvider) getSingleRedirects(dc *models.DomainConfig, id stri
 		rec.Original = thisPr
 
 		// Store the IDs. These will be needed for update/delete operations.
-		sr := rec.F.(*cfsingleredirect.SingleRedirectConfig)
+		sr := rec.RDATA.(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT)
 		sr.SRRRulesetID = rules.ID
 		sr.SRRRulesetRuleID = pr.ID
 
@@ -386,7 +386,7 @@ func (c *cloudflareProvider) getSingleRedirects(dc *models.DomainConfig, id stri
 	return recs, nil
 }
 
-func (c *cloudflareProvider) createSingleRedirect(domainID string, cfr cfsingleredirect.SingleRedirectConfig) error {
+func (c *cloudflareProvider) createSingleRedirect(domainID string, cfr privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT) error {
 	newSingleRedirectRulesActionParameters := cloudflare.RulesetRuleActionParameters{}
 	newSingleRedirectRule := cloudflare.RulesetRule{}
 	newSingleRedirectRules := []cloudflare.RulesetRule{}
@@ -429,7 +429,7 @@ func (c *cloudflareProvider) createSingleRedirect(domainID string, cfr cfsingler
 	return err
 }
 
-func (c *cloudflareProvider) deleteSingleRedirects(domainID string, cfr cfsingleredirect.SingleRedirectConfig) error {
+func (c *cloudflareProvider) deleteSingleRedirects(domainID string, cfr privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT) error {
 	err := c.cfClient.DeleteRulesetRule(context.Background(), cloudflare.ZoneIdentifier(domainID), cloudflare.DeleteRulesetRuleParams{
 		RulesetID:     cfr.SRRRulesetID,
 		RulesetRuleID: cfr.SRRRulesetRuleID,
@@ -444,10 +444,10 @@ func (c *cloudflareProvider) deleteSingleRedirects(domainID string, cfr cfsingle
 }
 
 func (c *cloudflareProvider) updateSingleRedirect(domainID string, oldrec, newrec *models.RecordConfig) error {
-	if err := c.deleteSingleRedirects(domainID, *oldrec.F.(*cfsingleredirect.SingleRedirectConfig)); err != nil {
+	if err := c.deleteSingleRedirects(domainID, *oldrec.RDATA.(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT)); err != nil {
 		return err
 	}
-	return c.createSingleRedirect(domainID, *newrec.F.(*cfsingleredirect.SingleRedirectConfig))
+	return c.createSingleRedirect(domainID, *newrec.RDATA.(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT))
 }
 
 func (c *cloudflareProvider) getWorkerRoutes(id string, domain string) ([]*models.RecordConfig, error) {

@@ -58,7 +58,7 @@ type RecordConfig struct {
 
 	// F is the binary representation of the record's data usually a dns.XYZ struct.
 	// Always stored in Punycode, not Unicode. Downcased where applicable.
-	F any `json:"fields,omitempty"`
+	// F any `json:"fields,omitempty"`
 	//FieldsAsRaw     []string // Fields as received from the dnsconfig.js file, converted to strings.
 	//FieldsAsUnicode []string // fields with IDN fields converted to Unicode for display purposes.
 
@@ -629,17 +629,17 @@ func (rc *RecordConfig) ToRR() dnsv1.RR {
 		log.Fatalf("No such DNS type as (%#v)\n", rc.Type)
 	}
 
-	// If this IsModernType, the dns.RR is already in rc.F.
-	if rr, ok := rc.F.(dnsv1.RR); ok {
-		rr.Header().Name = rc.NameFQDN + "."
-		rr.Header().Rrtype = rdtype
-		rr.Header().Class = dnsv1.ClassINET
-		rr.Header().Ttl = rc.TTL
-		if rc.TTL == 0 {
-			rr.Header().Ttl = DefaultTTL
-		}
-		return rr
-	}
+	// // If this IsModernType, the dns.RR is already in rc.F.
+	// if rr, ok := rc.F.(dnsv1.RR); ok {
+	// 	rr.Header().Name = rc.NameFQDN + "."
+	// 	rr.Header().Rrtype = rdtype
+	// 	rr.Header().Class = dnsv1.ClassINET
+	// 	rr.Header().Ttl = rc.TTL
+	// 	if rc.TTL == 0 {
+	// 		rr.Header().Ttl = DefaultTTL
+	// 	}
+	// 	return rr
+	// }
 
 	// Magically create an RR of the correct type.
 	rr := dnsv1.TypeToRR[rdtype]()
@@ -866,7 +866,8 @@ func (rc *RecordConfig) GetSVCBValue() []dnsv1.SVCBKeyValue {
 //
 // FUTURE(tlim): Once all record types have been migrated to use ".F", this function can be removed.
 func (rc *RecordConfig) IsModernType() bool {
-	return rc.F != nil
+	//return rc.RDATA != nil
+	return false
 }
 
 // Records is a list of *RecordConfig.

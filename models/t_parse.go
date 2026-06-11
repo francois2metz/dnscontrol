@@ -168,6 +168,9 @@ func (rc *RecordConfig) PopulateFromString(rtype, contents, origin string) error
 	if rc.Type != "" && rc.Type != rtype {
 		panic(fmt.Errorf("assertion failed: rtype already set (%s) (%s)", rtype, rc.Type))
 	}
+
+	// TODO(tlim): If this is a modern type, use NewRecordConfigForPopulateFromString.
+
 	switch rc.Type = rtype; rtype { // #rtype_variations
 	case "A":
 		ip, err := netip.ParseAddr(contents)

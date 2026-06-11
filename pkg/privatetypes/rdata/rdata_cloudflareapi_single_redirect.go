@@ -11,10 +11,13 @@ import (
 )
 
 type CLOUDFLAREAPISINGLEREDIRECT struct {
-	SRName string
-	Code   uint16
-	SRWhen string
-	SRThen string
+	SRName           string
+	Code             uint16
+	SRWhen           string
+	SRThen           string
+	SRRRulesetID     string
+	SRRRulesetRuleID string
+	SRDisplay        string
 }
 
 func (rd CLOUDFLAREAPISINGLEREDIRECT) Len() int {
