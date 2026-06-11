@@ -169,7 +169,8 @@
     "apikey": "$GANDI_V5_APIKEY",
     "apiurl": "$GANDI_V5_APIURL",
     "domain": "$GANDI_V5_DOMAIN",
-    "token": "$GANDI_V5_TOKEN"
+    "token": "$GANDI_V5_TOKEN",
+    "apiurl": "$GANDI_V5_APIURL"
   },
   "GCLOUD": {
     "TYPE": "GCLOUD",

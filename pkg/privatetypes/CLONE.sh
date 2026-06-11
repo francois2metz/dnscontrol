@@ -33,7 +33,11 @@ done
 
 num=$(echo 1 + $(grep -h  'const Type' *.go | awk '{ print $NF }'  |sort | tail -1) | bc)
 echo "Codepoint: $num"
+<<<<<<< HEAD
 sed -i.bak -e "s/const Type.*/const Type${DEST_VAR} = $num/g" t_"${DEST_LC}.go"
+=======
+sed -i.bak -e 's/const Type'"${SRC_VAR}"'.*/const Type'"${DEST_VAR}"' = '"$num"'/g' t_"${DEST_LC}.go"
+>>>>>>> fcd5dd65 (fixups!)
 rm "t_${DEST_LC}.go.bak"
 grep -E "^const Type${SRC_VAR}" "t_${DEST_LC}.go"
 
