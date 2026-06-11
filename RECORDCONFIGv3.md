@@ -12,7 +12,6 @@ DELETE THIS BEFORE THE RELEASE
 
 ### Developer notes
 
-* There is now a factory for `models.DomainConfig{}` called `models.NewDomainConfig(name)`. This is now the only supported way to make a new `DomainConfig`.
 
 ### Potential breaking changes
 
@@ -26,6 +25,7 @@ DELETE THIS BEFORE THE RELEASE
 ### miekg requests
 
 * `pkg/txtutil/{miekg.go miekg_test.go ddd/ddd.go}` come from dnsv2.  Upstream changes?
+* dnsutil.Trim() -- Returning "" for z longer than s is unintuitive. I would have expected it to return s. I was going to check the output for "" to detect this, but "" also means "s == z".  I wrote txtutil.StripZone() which is more accepting of its inputs.
 
 
 

@@ -102,20 +102,13 @@ func (z *ZoneGenData) generateZoneFileHelper(w io.Writer) error {
 		}
 	}
 	for i, rr := range z.Records {
-		// Fake types are commented out.
-		prefix := ""
-		// _, ok := dnsv1.StringToType[rr.Type]
-		// if !ok {
-		// 	prefix = ";"
-		// }
-
-		// name
-		nameShort := rr.Name
-		name := nameShort
-		if (prefix == "") && (i > 0 && nameShort == nameShortPrevious) {
-			name = ""
+		// label
+		nameShort := txtutil.StripZone(rr.Name, z.Origin)
+		if i > 0 && nameShort == nameShortPrevious {
+			nameShort = ""
+		} else {
+			nameShortPrevious = nameShort
 		}
-		nameShortPrevious = nameShort
 
 		// ttl
 		ttl := ""
@@ -131,9 +124,6 @@ func (z *ZoneGenData) generateZoneFileHelper(w io.Writer) error {
 
 		// the remaining line
 		target := rr.GetTargetCombinedFunc(txtutil.EncodeQuoted)
-		// if rr.Type == "HTTPS" || rr.Type == "SVCB" {
-		// 	fmt.Printf("DEBUG: target for SVCB/HTTPS is %s\n", target)
-		// }
 
 		// comment
 		comment := ""
@@ -157,8 +147,8 @@ func (z *ZoneGenData) generateZoneFileHelper(w io.Writer) error {
 			comment = " ;" + comment
 		}
 
-		fmt.Fprintf(w, "%s%s%s\n",
-			prefix, FormatLine([]int{10, 5, 2, 5, 0}, []string{name, ttl, "IN", typeStr, target}), comment)
+		fmt.Fprintf(w, "%s%s\n",
+			FormatLine([]int{10, 5, 2, 5, 0}, []string{nameShort, ttl, "IN", typeStr, target}), comment)
 	}
 	return nil
 }

@@ -128,7 +128,12 @@ func (rc *RecordConfig) FixUp(origin string) {
 			//rc.RDATA, err = MakeRP(origin, rc.F.(dnsv1.RP).Mbox, rc.F.(dnsv1.RP).Txt)
 			// RP is native to RecordConfigV3. No FixUP is needed or possible.
 		case "R53_ALIAS":
-			rc.RDATA, err = privatetypesrdata.MakeR53ALIAS(origin, nil, rc.R53Alias["type"], rc.GetTargetField(), rc.R53Alias["zone_id"], rc.R53Alias["evaluate_target_health"])
+			rc.RDATA, err = privatetypesrdata.MakeR53ALIAS(origin, nil,
+				rc.R53Alias["type"],
+				rc.GetTargetField(),
+				rc.R53Alias["zone_id"],
+				rc.R53Alias["evaluate_target_health"],
+			)
 
 		case "SMIMEA":
 			rc.RDATA, err = MakeSMIMEA(origin, nil, rc.SmimeaUsage, rc.SmimeaSelector, rc.SmimeaMatchingType, rc.GetTargetField())

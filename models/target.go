@@ -59,7 +59,8 @@ func (rc *RecordConfig) GetTargetCombined() string {
 			// 	panic("GetTargetCombined() found blank comparablev3")
 			// }
 			// return rc.ComparableV3
-			return fmt.Sprintf("%s atype=%s zone_id=%s evaluate_target_health=%s", rc.target, rc.R53Alias["type"], rc.R53Alias["zone_id"], rc.R53Alias["evaluate_target_health"])
+			//return fmt.Sprintf("%s atype=%s zone_id=%s evaluate_target_health=%s", rc.target, rc.R53Alias["type"], rc.R53Alias["zone_id"], rc.R53Alias["evaluate_target_health"])
+			return rc.RDATA.String()
 		case "AZURE_ALIAS":
 			// Differentiate between multiple AZURE_ALIASs on the same label.
 			return fmt.Sprintf("%s atype=%s", rc.target, rc.AzureAlias["type"])
