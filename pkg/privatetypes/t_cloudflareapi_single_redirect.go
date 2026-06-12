@@ -26,9 +26,9 @@ type CLOUDFLAREAPISINGLEREDIRECT struct {
 	// Code                 uint16
 	// SRWhen               string
 	// SRThen               string
-	// SRRRulesetID         string
-	// SRRRulesetRuleID     string
-	// SRDisplay            string
+	// SRRRulesetID         string	// Runtime
+	// SRRRulesetRuleID     string	// Runtime
+	// SRDisplay            string	// Runtime
 }
 
 // Typer interface.

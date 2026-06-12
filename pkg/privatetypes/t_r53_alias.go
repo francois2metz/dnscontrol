@@ -24,8 +24,8 @@ type R53ALIAS struct {
 	privatetypesrdata.R53ALIAS
 	// AliasType            string
 	// Target               string
-	// EvalTargetHealth     string
-	// ZoneID               string
+	// EvalTargetHealth     string	// Optional
+	// ZoneID               string	// Optional
 }
 
 // Typer interface.
@@ -39,16 +39,14 @@ func (rr *R53ALIAS) Len() int {
 	return rr.Hdr.Len() + rr.Data().Len()
 }
 func (rr *R53ALIAS) Data() dnsv2.RDATA {
-	return &privatetypesrdata.R53ALIAS{AliasType: rr.AliasType, Target: rr.Target, EvalTargetHealth: rr.EvalTargetHealth, ZoneID: rr.ZoneID}
+	return &privatetypesrdata.R53ALIAS{AliasType: rr.AliasType, Target: rr.Target}
 }
 func (rr *R53ALIAS) Clone() dnsv2.RR {
 	return &R53ALIAS{
 		Hdr: rr.Hdr,
 		R53ALIAS: privatetypesrdata.R53ALIAS{
-			AliasType:        rr.AliasType,
-			Target:           rr.Target,
-			EvalTargetHealth: rr.EvalTargetHealth,
-			ZoneID:           rr.ZoneID,
+			AliasType: rr.AliasType,
+			Target:    rr.Target,
 		}}
 }
 func (rr *R53ALIAS) String() string {
@@ -65,7 +63,5 @@ func (rr *R53ALIAS) Parse(tokens []string, s string) error {
 	}
 	rr.AliasType = mustbe.RawString(args[0])
 	rr.Target = mustbe.TargetHost("", args[1])
-	rr.EvalTargetHealth = mustbe.RawString(args[2])
-	rr.ZoneID = mustbe.RawString(args[3])
 	return nil
 }

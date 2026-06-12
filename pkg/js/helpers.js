@@ -410,9 +410,12 @@ function R53_ZONE(zone_id) {
     return function (r) {
         if (_isDomain(r)) {
             r.meta.zone_id = zone_id;
+            console.debug("R53_Opt store zoneid in domainmeta", zone_id);
         } else if (_.isObject(r.r53_alias)) {
             r.r53_alias['zone_id'] = zone_id;
+            console.debug("R53_Opt store zoneid in recordr53alias", zone_id);
         } else {
+            console.debug("R53_Opt MAKE  zoneid in recordr53alias", zone_id);
             r.r53_alias = { zone_id: zone_id };
         }
     };
@@ -427,6 +430,17 @@ function R53_EVALUATE_TARGET_HEALTH(enabled) {
             r.r53_alias = { evaluate_target_health: enabled.toString() };
         }
     };
+}
+
+function r53AliasOptions(record, processedArgs, processedMetas) {
+  var replacement = [processedArgs[0], processedArgs[1], "", ""];
+  
+  if (_.isObject(record.r53_alias)) {
+    replacement[3] = record.r53_alias['evaluate_target_health'] = 'false'
+    replacement[4] = record.r53_alias['zone_id'] || "";
+  }
+
+  return replacement;
 }
 
 // R53_WEIGHT(weight, set_identifier) configures Route 53 weighted routing.
@@ -2533,7 +2547,7 @@ var DISABLE_REPEATED_DOMAIN_CHECK = { skip_fqdn_check: 'true' };
 // Javascript knowledge, and allows us to use the testing platform build into
 // Go.
 
-function rawrecordBuilder(type, noLabel) {
+function rawrecordBuilder(type, noLabel, optionalsFn) {
     return function () {
 
         var rawArgs = [];
@@ -2581,6 +2595,13 @@ function rawrecordBuilder(type, noLabel) {
                     processedArgs.push(r);
                 }
             }
+
+            // Grab meta data that is OptionalsFields
+            if (optionalsFn !== undefined) {
+                //console.debug("FOO", optionalsFn)
+                processedArgs = optionalsFn(record, processedArgs, processedMetas)
+            }
+
             // Store the processed args.
             record.args = processedArgs;
             record.metas = processedMetas;
@@ -2600,4 +2621,4 @@ var CF_SINGLE_REDIRECT = rawrecordBuilder('CLOUDFLAREAPI_SINGLE_REDIRECT', true)
 var CF_TEMP_REDIRECT = rawrecordBuilder('CF_TEMP_REDIRECT', true);
 var DS = rawrecordBuilder('DS');
 var RP = rawrecordBuilder('RP');
-var R53_ALIAS = rawrecordBuilder('R53_ALIAS', false);
+var R53_ALIAS = rawrecordBuilder('R53_ALIAS', false, r53AliasOptions);

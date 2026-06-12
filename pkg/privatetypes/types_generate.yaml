@@ -209,7 +209,7 @@ types:
         type: RawString
       - name: Target
         type: TargetHost
-    runtimeFields:
+    optionalFields:
       - name: EvalTargetHealth
         type: RawString
       - name: ZoneID

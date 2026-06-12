@@ -26,19 +26,52 @@
       "name": "foo.com",
       "records": [
         {
+          "comparablev3": "A foo.com. false Z2FTEDLFRTZ",
           "filepos": "[line:6:5]",
           "meta": {
             "orig_custom_type": "R53_ALIAS"
           },
           "name": "atest",
+          "name_unicode": "atest",
           "r53_alias": {
             "evaluate_target_health": "false",
             "type": "A",
             "zone_id": "Z2FTEDLFRTZ"
           },
+          "rdata": {
+            "AliasType": "A",
+            "EvalTargetHealth": "false",
+            "Target": "foo.com.",
+            "ZoneID": "Z2FTEDLFRTZ"
+          },
           "target": "foo.com.",
           "ttl": 300,
-          "type": "R53_ALIAS"
+          "type": "R53_ALIAS",
+          "typenum": 65298
+        },
+        {
+          "comparablev3": "CNAME foo.com. \"\" \"\"",
+          "filepos": "[line:7:5]",
+          "meta": {
+            "orig_custom_type": "R53_ALIAS"
+          },
+          "name": "ctest",
+          "name_unicode": "ctest",
+          "r53_alias": {
+            "evaluate_target_health": "",
+            "type": "CNAME",
+            "zone_id": ""
+          },
+          "rdata": {
+            "AliasType": "CNAME",
+            "EvalTargetHealth": "",
+            "Target": "foo.com.",
+            "ZoneID": ""
+          },
+          "target": "foo.com.",
+          "ttl": 300,
+          "type": "R53_ALIAS",
+          "typenum": 65298
         }
       ],
       "registrar": "none",

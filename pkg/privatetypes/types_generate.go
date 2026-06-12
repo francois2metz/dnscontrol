@@ -15,12 +15,18 @@ import (
 
 // TypeDef represents a single type definition from the YAML
 type TypeDef struct {
-	Name          string        `yaml:"name"`
-	Codepoint     int           `yaml:"codepoint"`
-	Fields        []FieldDef    `yaml:"fields"`
-	RuntimeFields []FieldDef    `yaml:"runtimeFields"`
-	TestData      []TestDataDef `yaml:"test_data"`
+	Name           string        `yaml:"name"`
+	Codepoint      int           `yaml:"codepoint"`
+	Fields         []FieldDef    `yaml:"fields"`
+	OptionalFields []FieldDef    `yaml:"optionalFields"`
+	RuntimeFields  []FieldDef    `yaml:"runtimeFields"`
+	TestData       []TestDataDef `yaml:"test_data"`
 }
+
+//               TYPENAME(ops) .String()   TestTYPENAME()
+// Fields           YES           YES           YES
+// OptionalFields   no            YES           YES
+// RuntimeFields    YES           no            no
 
 // FieldDef represents a field within a type
 type FieldDef struct {
@@ -239,10 +245,19 @@ func generateTypeFile(t *TypeDef) error {
 	buf.WriteString("\tHdr dnsv2.Header\n\n")
 	fmt.Fprintf(&buf, "\tprivatetypesrdata.%s\n", typeName)
 
-	if len(t.Fields) > 0 || len(t.RuntimeFields) > 0 {
-		for _, f := range append(t.Fields, t.RuntimeFields...) {
-			fmt.Fprintf(&buf, "\t// %-20s %s\n", f.Name, info(f.Type).GoType)
-		}
+	//if len(t.Fields) > 0 || len(t.RuntimeFields) > 0 || len(t.OptionalFields) > 0 {
+	//	for _, f := range append(t.Fields, t.OptionalFields, t.RuntimeFields...) {
+	//		fmt.Fprintf(&buf, "\t// %-20s %s\n", f.Name, info(f.Type).GoType)
+	//	}
+	//}
+	for _, f := range t.Fields {
+		fmt.Fprintf(&buf, "\t// %-20s %s\n", f.Name, info(f.Type).GoType)
+	}
+	for _, f := range t.OptionalFields {
+		fmt.Fprintf(&buf, "\t// %-20s %s\t// Optional\n", f.Name, info(f.Type).GoType)
+	}
+	for _, f := range t.RuntimeFields {
+		fmt.Fprintf(&buf, "\t// %-20s %s\t// Runtime\n", f.Name, info(f.Type).GoType)
 	}
 
 	buf.WriteString("}\n\n")
@@ -309,12 +324,13 @@ func generateTypeFile(t *TypeDef) error {
 	fmt.Fprintf(&buf, "func (rr *%s) Parse(tokens []string, s string) error {\n", typeName)
 	buf.WriteString("\targs := TokensToArgs(tokens)\n")
 
-	if len(t.Fields) == 0 {
+	fc := len(t.Fields) + len(t.OptionalFields)
+	if fc == 0 {
 		fmt.Fprintf(&buf, "\tif len(args) != 0 {\n")
 		fmt.Fprintf(&buf, "\t\treturn fmt.Errorf(\"%s requires exactly 0 arguments, got %%d\", len(args))\n", displayName)
 	} else {
-		fmt.Fprintf(&buf, "\tif len(args) != %d {\n", len(t.Fields))
-		fmt.Fprintf(&buf, "\t\treturn fmt.Errorf(\"%s requires exactly %d arguments, got %%d: %%v\", len(args), args)\n", displayName, len(t.Fields))
+		fmt.Fprintf(&buf, "\tif len(args) != %d {\n", fc)
+		fmt.Fprintf(&buf, "\t\treturn fmt.Errorf(\"%s requires exactly %d arguments, got %%d: %%v\", len(args), args)\n", displayName, fc)
 	}
 
 	buf.WriteString("\t}\n")
@@ -374,7 +390,7 @@ func generateTestFile(t *TypeDef) error {
 			fmt.Fprintf(&buf, "\ty := &%s{\n", typeName)
 			buf.WriteString("\t\tHdr: dnsv2.Header{Name: \"example.org.\", Class: dnsv2.ClassINET},\n")
 			fmt.Fprintf(&buf, "\t\t%s: privatetypesrdata.%s{\n", typeName, typeName)
-			for _, f := range t.Fields {
+			for _, f := range append(t.Fields, t.OptionalFields...) {
 				fmt.Fprintf(&buf, "\t\t\t%s: %s,\n", f.Name, zeroLiteral(f.Type))
 			}
 			buf.WriteString("\t\t},\n")
@@ -462,6 +478,9 @@ func generateRdataFile(t *TypeDef) error {
 	for _, f := range t.Fields {
 		fmt.Fprintf(&buf, "\t%-20s %s\n", f.Name, info(f.Type).GoType)
 	}
+	for _, f := range t.OptionalFields {
+		fmt.Fprintf(&buf, "\t%-20s %s\n", f.Name, info(f.Type).GoType)
+	}
 	for _, f := range t.RuntimeFields {
 		fmt.Fprintf(&buf, "\t%-20s %s\n", f.Name, info(f.Type).GoType)
 	}
@@ -476,13 +495,13 @@ func generateRdataFile(t *TypeDef) error {
 	}
 	buf.WriteString("}\n\n")
 
-	// String: build a space-separated textual representation of the fields.
+	// String: build a zonefile-compatble (space-separated) textual representation of the fields.
 	fmt.Fprintf(&buf, "func (rd %s) String() string {\n", typeName)
-	if len(t.Fields) == 0 {
+	if len(t.Fields) == 0 && len(t.OptionalFields) == 0 {
 		buf.WriteString("\treturn \"\"\n")
 	} else {
-		fmt.Fprintf(&buf, "\tparts := make([]string, 0, %d)\n", len(t.Fields))
-		for _, f := range t.Fields {
+		fmt.Fprintf(&buf, "\tparts := make([]string, 0, %d)\n", len(t.Fields)+len(t.OptionalFields))
+		for _, f := range append(t.Fields, t.OptionalFields...) {
 			// Special-case behaviors requested by generator requirements.
 			switch f.Type {
 			case "RawString":
@@ -512,12 +531,12 @@ func generateRdataFile(t *TypeDef) error {
 	fmt.Fprintf(&buf, "func Make%s(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {\n", typeName)
 	buf.WriteString("\tmustbe.ValidArgs(args)\n")
 
-	if len(t.Fields) == 0 {
+	if len(t.Fields) == 0 && len(t.OptionalFields) == 0 {
 		fmt.Fprintf(&buf, "\tif len(args) != 0 {\n")
 		fmt.Fprintf(&buf, "\t\treturn %s{}, fmt.Errorf(\"%s expects 0 arguments, got %%d: %%+v\", len(args), args)\n", typeName, displayName)
 	} else {
-		fmt.Fprintf(&buf, "\tif len(args) != %d {\n", len(t.Fields))
-		fmt.Fprintf(&buf, "\t\treturn %s{}, fmt.Errorf(\"%s expects %d arguments, got %%d: %%+v\", len(args), args)\n", typeName, displayName, len(t.Fields))
+		fmt.Fprintf(&buf, "\tif len(args) != %d {\n", (len(t.Fields) + len(t.OptionalFields)))
+		fmt.Fprintf(&buf, "\t\treturn %s{}, fmt.Errorf(\"%s expects %d arguments, got %%d: %%+v\", len(args), args)\n", typeName, displayName, (len(t.Fields) + len(t.OptionalFields)))
 	}
 
 	buf.WriteString("\t}\n")
@@ -526,7 +545,7 @@ func generateRdataFile(t *TypeDef) error {
 		fmt.Fprintf(&buf, "\treturn %s{}, nil\n", typeName)
 	} else {
 		fmt.Fprintf(&buf, "\treturn %s{\n", typeName)
-		for i, f := range t.Fields {
+		for i, f := range append(t.Fields, t.OptionalFields...) {
 			ti := info(f.Type)
 			if ti.NeedsOrigin {
 				fmt.Fprintf(&buf, "\t\t%s: mustbe.%s(origin, args[%d]),\n", f.Name, f.Type, i)
