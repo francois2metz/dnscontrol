@@ -91,7 +91,7 @@ dc, err := models.NewDomainConfig(zone)                                     doma
 dc.AddRecordConfig(models.MakeTestRC(label, ttl, type, args))               domain.go
 dc.AddRecordConfig(models.MakeTestRCParse(label, ttl, type, args))          domain.go
 
-How to add a standard type:
+### How to add a standard type:
 
 * models/makers.go: Add a Make$TYPENAME
 * models/makers.go: Add to the func init().
@@ -100,7 +100,9 @@ How to add a standard type:
 * integrationTest/integration_test.go: Add tests that create the type, changes each field indiviually.
 * pkg/js/helpers.js: Add to list at the end.
 
-How to add a non-standard type.
+### How to add a non-standard type.
+
+* Z
 
 * Same as above plus...
 

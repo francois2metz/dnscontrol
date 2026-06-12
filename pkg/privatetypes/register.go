@@ -7,6 +7,7 @@ import (
 )
 
 // TypeToMakeRDATA returns a function that accepts arguments of any type and returns a dnsv2.RDATA struct.
+// TODO: At which level should we require "mustbe."?
 // Examples:
 //
 //	demoRC1, err := TypeToMakeRDATA[dnsv2.TypeA](mustbe.IPv4("1.2.3.4"))

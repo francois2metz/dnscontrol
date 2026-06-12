@@ -381,29 +381,29 @@ function validateAzureAliasType(value) {
     return ['A', 'AAAA', 'CNAME'].indexOf(value) !== -1;
 }
 
-// R53_ALIAS(name, target, type, recordModifiers...)
-var R53_ALIAS = recordBuilder('R53_ALIAS', {
-    args: [
-        ['name', _.isString],
-        ['type', validateR53AliasType],
-        ['target', _.isString],
-    ],
-    transform: function (record, args, modifiers) {
-        record.name = args.name;
-        record.target = args.target;
-        if (_.isObject(record.r53_alias)) {
-            record.r53_alias['type'] = args.type;
-            if (!_.isString(record.r53_alias['evaluate_target_health'])) {
-                record.r53_alias['evaluate_target_health'] = 'false';
-            }
-        } else {
-            record.r53_alias = {
-                type: args.type,
-                evaluate_target_health: 'false',
-            };
-        }
-    },
-});
+// // R53_ALIAS(name, target, type, recordModifiers...)
+// var R53_ALIAS = recordBuilder('R53_ALIAS', {
+//     args: [
+//         ['name', _.isString],
+//         ['type', validateR53AliasType],
+//         ['target', _.isString],
+//     ],
+//     transform: function (record, args, modifiers) {
+//         record.name = args.name;
+//         record.target = args.target;
+//         if (_.isObject(record.r53_alias)) {
+//             record.r53_alias['type'] = args.type;
+//             if (!_.isString(record.r53_alias['evaluate_target_health'])) {
+//                 record.r53_alias['evaluate_target_health'] = 'false';
+//             }
+//         } else {
+//             record.r53_alias = {
+//                 type: args.type,
+//                 evaluate_target_health: 'false',
+//             };
+//         }
+//     },
+// });
 
 // R53_ZONE(zone_id)
 function R53_ZONE(zone_id) {
@@ -2600,3 +2600,4 @@ var CF_SINGLE_REDIRECT = rawrecordBuilder('CLOUDFLAREAPI_SINGLE_REDIRECT', true)
 var CF_TEMP_REDIRECT = rawrecordBuilder('CF_TEMP_REDIRECT', true);
 var DS = rawrecordBuilder('DS');
 var RP = rawrecordBuilder('RP');
+var R53_ALIAS = rawrecordBuilder('R53_ALIAS', false);

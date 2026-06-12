@@ -211,6 +211,7 @@ types:
         type: TargetHost
       - name: EvalTargetHealth
         type: RawString
+    fields:
       - name: ZoneID
         type: RawString
     test_data:
