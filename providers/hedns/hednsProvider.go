@@ -229,7 +229,8 @@ func (c *hednsProvider) EnsureZoneExists(domain string, metadata map[string]stri
 
 // GetNameservers returns the default HEDNS nameservers.
 func (c *hednsProvider) GetNameservers(_ string) ([]*models.Nameserver, error) {
-	return models.ToNameservers(defaultNameservers)
+	//return models.ToNameservers(defaultNameservers)
+	return models.ToNameservers(nil)
 }
 
 // preprocessConfig normalises HEDNS-specific metadata on desired records.
@@ -487,7 +488,7 @@ func (c *hednsProvider) GetZoneRecords(dc *models.DomainConfig) (models.Records,
 		var rc *models.RecordConfig
 
 		if privatetypes.IsModernType(rec.Type) {
-			rc, err = dc.NewRecordConfig(rec.Name, rec.TTL, rec.Type, rec.Data)
+			rc, err = dc.NewRecordConfigParse(rec.Name, rec.TTL, rec.Type, rec.Data)
 		} else {
 			rc = &models.RecordConfig{Type: rec.Type, TTL: rec.TTL}
 			rc.SetLabelFromFQDN(rec.Name, domain)

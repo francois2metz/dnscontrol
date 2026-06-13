@@ -254,6 +254,8 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 		rc.SetTargetLOC(rd.Version, rd.Latitude, rd.Longitude, rd.Altitude, rd.Size, rd.HorizPre, rd.VertPre)
 	case dnsrdatav2.MX:
 		rc.SetTargetMX(rd.Preference, rd.Mx)
+	case dnsrdatav2.NS:
+		rc.SetTarget(rd.Ns)
 	case dnsrdatav2.NAPTR:
 		rc.SetTargetNAPTR(rd.Order, rd.Preference, rd.Flags, rd.Service, rd.Regexp, rd.Service)
 	case dnsrdatav2.RP:
