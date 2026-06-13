@@ -24,13 +24,25 @@ func (dc *DomainConfig) LabelFromShort(name string) string {
 // Name is assumed to be ASCII, not Unicode (which is what most APIs return).
 // Name is assumed to end with the zone name (which is what most APIs return).
 func (dc *DomainConfig) LabelFromFQDNNoDot(name string) string {
-	// TODO(tlim): Maybe add a debug mode that panics if name doesn't end with origin
-	name = strings.ToLower(name)
-	name = strings.TrimSuffix(name, dc.Name)
 	if name == "" {
 		return "@"
 	}
-	return strings.ToLower(name)
+
+	newName := strings.ToLower(name)
+
+	if before, found := strings.CutSuffix(newName, "."+dc.Name); found {
+		return before
+	}
+	if newName == dc.Name {
+		return "@"
+	}
+
+	// These other possibilities all indicate the function was called wrong.
+	fmt.Printf("DEBUG: LabelFromFQDNNoDot(%v) called\n", name)
+	if newName == "" {
+		return "@"
+	}
+	return newName
 }
 
 // LabelFromDnsconfigjs takes a label from dnsconfig.js and prepares it for use in a RecordConfig.
