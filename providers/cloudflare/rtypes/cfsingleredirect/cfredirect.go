@@ -9,8 +9,8 @@ import (
 )
 
 func init() {
-	models.RegisterGenerator("CF_REDIRECT", BuilderCFREDIRECT)
-	models.RegisterGenerator("CF_TEMP_REDIRECT", BuilderCFTEMPREDIRECT)
+	models.RegisterBuilder("CF_REDIRECT", BuilderCFREDIRECT)
+	models.RegisterBuilder("CF_TEMP_REDIRECT", BuilderCFTEMPREDIRECT)
 }
 
 func BuilderCFREDIRECT(dc *models.DomainConfig, ttl uint32, args []any) (models.Records, error) {

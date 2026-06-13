@@ -2,12 +2,12 @@ package models
 
 import "fmt"
 
-type RecordGeneratorFn func(dc *DomainConfig, ttl uint32, args []any) (Records, error)
+type RecordBuilderFn func(dc *DomainConfig, ttl uint32, args []any) (Records, error)
 
-var mapBuilderNameToFn = make(map[string]RecordGeneratorFn)
+var mapBuilderNameToFn = make(map[string]RecordBuilderFn)
 
-// RegisterGenerator registers a fake type that generates one or more RecordConfigs.
-func RegisterGenerator(typeName string, genFn RecordGeneratorFn) {
+// RegisterBuilder registers a fake type that generates one or more RecordConfigs.
+func RegisterBuilder(typeName string, genFn RecordBuilderFn) {
 
 	// typenum -> function that runs the generator and returns a list of RecordConfigs.
 	if s, exists := mapBuilderNameToFn[typeName]; exists {

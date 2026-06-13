@@ -17,7 +17,6 @@
           "name_unicode": "@",
           "rdata": {
             "Code": 301,
-            "SRDisplay": "",
             "SRName": "name1",
             "SRRRulesetID": "",
             "SRRRulesetRuleID": "",
@@ -35,7 +34,6 @@
           "name_unicode": "@",
           "rdata": {
             "Code": 302,
-            "SRDisplay": "",
             "SRName": "name2",
             "SRRRulesetID": "",
             "SRRRulesetRuleID": "",
@@ -53,7 +51,6 @@
           "name_unicode": "@",
           "rdata": {
             "Code": 301,
-            "SRDisplay": "",
             "SRName": "name3",
             "SRRRulesetID": "",
             "SRRRulesetRuleID": "",
@@ -75,7 +72,6 @@
           "name_unicode": "@",
           "rdata": {
             "Code": 302,
-            "SRDisplay": "",
             "SRName": "namemeta",
             "SRRRulesetID": "",
             "SRRRulesetRuleID": "",
@@ -83,24 +79,6 @@
             "SRWhen": "whenmeta"
           },
           "ttl": 300,
-          "type": "CLOUDFLAREAPI_SINGLE_REDIRECT",
-          "typenum": 65289
-        },
-        {
-          "comparablev3": "namettl 302 whenttl thenttl",
-          "filepos": "[line:8:5]",
-          "name": "@",
-          "name_unicode": "@",
-          "rdata": {
-            "Code": 302,
-            "SRDisplay": "",
-            "SRName": "namettl",
-            "SRRRulesetID": "",
-            "SRRRulesetRuleID": "",
-            "SRThen": "thenttl",
-            "SRWhen": "whenttl"
-          },
-          "ttl": 999,
           "type": "CLOUDFLAREAPI_SINGLE_REDIRECT",
           "typenum": 65289
         },
