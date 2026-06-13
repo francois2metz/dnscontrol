@@ -433,14 +433,14 @@ function R53_EVALUATE_TARGET_HEALTH(enabled) {
 }
 
 function r53AliasOptions(record, processedArgs, processedMetas) {
-  var replacement = [processedArgs[0], processedArgs[1], "", ""];
-  
-  if (_.isObject(record.r53_alias)) {
-    replacement[3] = record.r53_alias['evaluate_target_health'] = 'false'
-    replacement[4] = record.r53_alias['zone_id'] || "";
-  }
+    var replacement = [processedArgs[0], processedArgs[1], '', ''];
 
-  return replacement;
+    if (_.isObject(record.r53_alias)) {
+        replacement[3] = record.r53_alias['evaluate_target_health'] = 'false';
+        replacement[4] = record.r53_alias['zone_id'] || '';
+    }
+
+    return replacement;
 }
 
 // R53_WEIGHT(weight, set_identifier) configures Route 53 weighted routing.
@@ -2549,10 +2549,9 @@ var DISABLE_REPEATED_DOMAIN_CHECK = { skip_fqdn_check: 'true' };
 
 function rawrecordBuilder(type, noLabel, optionalsFn) {
     return function () {
-
         var rawArgs = [];
-        if ((noLabel !== undefined) && (noLabel) ) {
-            rawArgs.push("@");
+        if (noLabel !== undefined && noLabel) {
+            rawArgs.push('@');
         }
         // Copy the raw args locally.
         for (var i = 0; i < arguments.length; i++) {
@@ -2599,7 +2598,11 @@ function rawrecordBuilder(type, noLabel, optionalsFn) {
             // Grab meta data that is OptionalsFields
             if (optionalsFn !== undefined) {
                 //console.debug("FOO", optionalsFn)
-                processedArgs = optionalsFn(record, processedArgs, processedMetas)
+                processedArgs = optionalsFn(
+                    record,
+                    processedArgs,
+                    processedMetas
+                );
             }
 
             // Store the processed args.
@@ -2617,7 +2620,10 @@ function rawrecordBuilder(type, noLabel, optionalsFn) {
 // PLEASE KEEP THIS LIST ALPHABETICAL!
 
 var CF_REDIRECT = rawrecordBuilder('CF_REDIRECT', true);
-var CF_SINGLE_REDIRECT = rawrecordBuilder('CLOUDFLAREAPI_SINGLE_REDIRECT', true);
+var CF_SINGLE_REDIRECT = rawrecordBuilder(
+    'CLOUDFLAREAPI_SINGLE_REDIRECT',
+    true
+);
 var CF_TEMP_REDIRECT = rawrecordBuilder('CF_TEMP_REDIRECT', true);
 var DS = rawrecordBuilder('DS');
 var R53_ALIAS = rawrecordBuilder('R53_ALIAS', false, r53AliasOptions);
