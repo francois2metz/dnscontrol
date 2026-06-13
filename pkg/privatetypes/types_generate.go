@@ -531,15 +531,26 @@ func generateRdataFile(t *TypeDef) error {
 	fmt.Fprintf(&buf, "func Make%s(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {\n", typeName)
 	buf.WriteString("\tmustbe.ValidArgs(args)\n")
 
+	minArgs := len(t.Fields)
+	maxArgs := minArgs + len(t.OptionalFields)
 	if len(t.Fields) == 0 && len(t.OptionalFields) == 0 {
 		fmt.Fprintf(&buf, "\tif len(args) != 0 {\n")
 		fmt.Fprintf(&buf, "\t\treturn %s{}, fmt.Errorf(\"%s expects 0 arguments, got %%d: %%+v\", len(args), args)\n", typeName, displayName)
 	} else {
-		fmt.Fprintf(&buf, "\tif len(args) != %d {\n", (len(t.Fields) + len(t.OptionalFields)))
+		if len(t.OptionalFields) == 0 {
+			fmt.Fprintf(&buf, "\tif len(args) != %d {\n", minArgs)
+		} else {
+			fmt.Fprintf(&buf, "\tif len(args) < %d || len(args) > %d {\n", minArgs, maxArgs)
+		}
 		fmt.Fprintf(&buf, "\t\treturn %s{}, fmt.Errorf(\"%s expects %d arguments, got %%d: %%+v\", len(args), args)\n", typeName, displayName, (len(t.Fields) + len(t.OptionalFields)))
 	}
 
 	buf.WriteString("\t}\n")
+	if minArgs < maxArgs {
+		fmt.Fprintf(&buf, "\tfor len(args) < %d {", maxArgs)
+		fmt.Fprint(&buf, "\t\targs = append(args, \"\")\n")
+		fmt.Fprint(&buf, "\t}\n")
+	}
 
 	if len(t.Fields) == 0 {
 		fmt.Fprintf(&buf, "\treturn %s{}, nil\n", typeName)
