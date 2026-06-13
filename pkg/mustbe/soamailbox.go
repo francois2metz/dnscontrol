@@ -7,9 +7,9 @@ import (
 	"github.com/DNSControl/dnscontrol/v4/pkg/domaintags"
 )
 
-// Format a SOA Mailbox string, such as tal.example.com (The "@" in the email address is written as an "." because nothing in DNS is simple).
-// This function goes beyond that and...
-// * Returns the string unchanged if it is "DEFAULT_NOT_SET"
+// SoaMailbox format a SOA Mailbox string, such as tal.example.com (The "@" in
+// the email address is written as an "." because nothing in DNS is simple).
+// This function also...
 // * Turns normal email addresses (tal@example.com) into SOA Mailbox strings (tal.example.com).
 // * Turns Unicode into PunyCode (just in the hostname part)
 // * Runs ToLower.
@@ -24,20 +24,13 @@ func SoaMailbox(arg any) string {
 	default:
 		name = fmt.Sprintf("%v", arg)
 	}
-	//fmt.Printf("DEBUG: soamailbox: input=%q\n", name)
 
-	// If someone included the "@", we change it for them.
-	// NB(tlim) In theory we should only replace the last at. However that is
-	// such a rare case tha we're not going to handle it. You should be thankful
-	// that we're translating your email address instead of making you do it.
-	// Don't expect us to handle contrived situations like an email address with
-	// two @ symbols in it.  They're technically valid but nobody uses them.
+	// Turn email addresses into SOAMailbox format:
 	name = strings.ReplaceAll(name, "@", ".")
 	name = strings.ToLower(name)
 
 	if strings.Count(name, ".") == 0 {
 		// Techinically we should reject this but... they're digging their own grave.
-		//fmt.Printf("DEBUG: soamailbox: out3 =%q\n", name)
 		return name
 	}
 
@@ -53,6 +46,5 @@ func SoaMailbox(arg any) string {
 
 	hostname = domaintags.EfficientToASCII(hostname)
 
-	//fmt.Printf("DEBUG: soamailbox: out4 =%q\n", username+"."+hostname)
 	return username + "." + hostname
 }
