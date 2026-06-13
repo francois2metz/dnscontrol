@@ -369,7 +369,7 @@ func (c *cloudflareProvider) getSingleRedirects(dc *models.DomainConfig, id stri
 		// 	Args: []any{srName, code, srWhen, srThen},
 		// 	DCN:  domaintags.MakeDomainNameVarieties(domain),
 		// })
-		rec, err := dc.NewRecordConfig("@", 0, privatetypes.TypeCLOUDFLAREAPISINGLEREDIRECT, srName, srWhen, srThen, code)
+		rec, err := dc.NewRecordConfig("@", 0, privatetypes.TypeCLOUDFLAREAPISINGLEREDIRECT, srName, code, srWhen, srThen)
 		if err != nil {
 			return nil, err
 		}
@@ -379,6 +379,7 @@ func (c *cloudflareProvider) getSingleRedirects(dc *models.DomainConfig, id stri
 		sr := rec.RDATA.(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT)
 		sr.SRRRulesetID = rules.ID
 		sr.SRRRulesetRuleID = pr.ID
+		// TODO(tlim) Make these paramters to the NewRecordConfig above.
 
 		recs = append(recs, rec)
 	}
