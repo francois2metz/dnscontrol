@@ -1,0 +1,58 @@
+package mustbe
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/DNSControl/dnscontrol/v4/pkg/domaintags"
+)
+
+// Format a SOA Mailbox string, such as tal.example.com (The "@" in the email address is written as an "." because nothing in DNS is simple).
+// This function goes beyond that and...
+// * Returns the string unchanged if it is "DEFAULT_NOT_SET"
+// * Turns normal email addresses (tal@example.com) into SOA Mailbox strings (tal.example.com).
+// * Turns Unicode into PunyCode (just in the hostname part)
+// * Runs ToLower.
+// * Does NOT add an origin if this is a shortname. We can't know if it is a shortname because it is dotless.)
+func SoaMailbox(arg any) string {
+	var name string
+	switch v := arg.(type) {
+	case string:
+		name = v
+	case int:
+		name = fmt.Sprintf("%d", arg)
+	default:
+		name = fmt.Sprintf("%v", arg)
+	}
+	//fmt.Printf("DEBUG: soamailbox: input=%q\n", name)
+
+	// If someone included the "@", we change it for them.
+	// NB(tlim) In theory we should only replace the last at. However that is
+	// such a rare case tha we're not going to handle it. You should be thankful
+	// that we're translating your email address instead of making you do it.
+	// Don't expect us to handle contrived situations like an email address with
+	// two @ symbols in it.  They're technically valid but nobody uses them.
+	name = strings.ReplaceAll(name, "@", ".")
+	name = strings.ToLower(name)
+
+	if strings.Count(name, ".") == 0 {
+		// Techinically we should reject this but... they're digging their own grave.
+		//fmt.Printf("DEBUG: soamailbox: out3 =%q\n", name)
+		return name
+	}
+
+	// Normalize it (even though it isn't a hostname,
+	parts := strings.SplitN(name, ".", 2)
+	if len(parts) == 0 {
+		return "SHOULD_NOT_HAPPEN."
+	}
+	if len(parts) == 1 {
+		parts = append(parts, "")
+	}
+	username, hostname := parts[0], parts[1]
+
+	hostname = domaintags.EfficientToASCII(hostname)
+
+	//fmt.Printf("DEBUG: soamailbox: out4 =%q\n", username+"."+hostname)
+	return username + "." + hostname
+}

@@ -950,12 +950,12 @@ func Downcase(recs []*RecordConfig) {
 		case "A", "CAA", "CLOUDFLAREAPI_SINGLE_REDIRECT", "CF_REDIRECT", "CF_TEMP_REDIRECT", "CF_WORKER_ROUTE", "DHCID", "IMPORT_TRANSFORM", "LOC", "OPENPGPKEY", "SSHFP", "TXT", "ADGUARDHOME_A_PASSTHROUGH", "ADGUARDHOME_AAAA_PASSTHROUGH":
 			// Do nothing. (IP address or case sensitive target)
 		case "SOA":
-			if r.target != "DEFAULT_NOT_SET." {
-				r.target = strings.ToLower(r.target) // .target stores the Ns
-			}
-			if r.SoaMbox != "DEFAULT_NOT_SET." {
-				r.SoaMbox = strings.ToLower(r.SoaMbox)
-			}
+			//if r.target != "DEFAULT_NOT_SET." {
+			r.target = strings.ToLower(r.target) // .target stores the Ns
+			//}
+			//if r.SoaMbox != "DEFAULT_NOT_SET." {
+			r.SoaMbox = strings.ToLower(r.SoaMbox)
+			//}
 		default:
 			// TODO: we'd like to panic here, but custom record types complicate things.
 		}
@@ -979,10 +979,10 @@ func CanonicalizeTargets(recs []*RecordConfig, origin string) {
 		case "A", "AKAMAICDN", "AKAMAITLC", "CAA", "DHCID", "CLOUDFLAREAPI_SINGLE_REDIRECT", "CF_REDIRECT", "CF_TEMP_REDIRECT", "CF_WORKER_ROUTE", "HTTPS", "IMPORT_TRANSFORM", "LOC", "OPENPGPKEY", "SMIMEA", "SSHFP", "SVCB", "TLSA", "TXT", "ADGUARDHOME_A_PASSTHROUGH", "ADGUARDHOME_AAAA_PASSTHROUGH":
 			// Do nothing.
 		case "SOA":
-			if r.target != "DEFAULT_NOT_SET." {
+			if r.target != "default_not_set." {
 				r.target = dnsutilv1.AddOrigin(r.target, originFQDN) // .target stores the Ns
 			}
-			if r.SoaMbox != "DEFAULT_NOT_SET." {
+			if r.SoaMbox != "default_not_set." {
 				r.SoaMbox = dnsutilv1.AddOrigin(r.SoaMbox, originFQDN)
 			}
 		default:

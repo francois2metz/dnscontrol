@@ -233,7 +233,7 @@ func MakeSOA(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, erro
 	}
 	return dnsrdatav2.SOA{
 		Ns:      mustbe.TargetHost(origin, args[0]),
-		Mbox:    mustbe.RawString(args[1]), // FIXME(tlim): Should be mustbe.SoaMbox()
+		Mbox:    mustbe.SoaMailbox(args[1]),
 		Serial:  mustbe.Uint32(args[2]),
 		Refresh: mustbe.Uint32(args[3]),
 		Retry:   mustbe.Uint32(args[4]),

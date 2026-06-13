@@ -15,7 +15,7 @@ func AddSoaIfMissing(dc *models.DomainConfig, defaultSoaValues SoaDefaults) {
 		}
 	}
 
-	soaMail := firstNonNull(defaultSoaValues.Mbox, "DEFAULT_NOT_SET.")
+	soaMail := firstNonNull(defaultSoaValues.Mbox, "default_not_set.")
 	if strings.Contains(soaMail, "@") {
 		soaMail = soautil.RFC5322MailToBind(soaMail)
 	}
@@ -25,7 +25,7 @@ func AddSoaIfMissing(dc *models.DomainConfig, defaultSoaValues SoaDefaults) {
 		TTL:  firstNonZero(defaultSoaValues.TTL, models.DefaultTTL),
 	}
 	err := soaRec.SetTargetSOA(
-		firstNonNull(defaultSoaValues.Ns, "DEFAULT_NOT_SET."),
+		firstNonNull(defaultSoaValues.Ns, "default_not_set."),
 		soaMail,
 		firstNonZero(defaultSoaValues.Serial, 1),
 		firstNonZero(defaultSoaValues.Refresh, 3600),
