@@ -242,6 +242,8 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 	switch rd := rc.RDATA.(type) {
 	case dnsrdatav2.A:
 		rc.SetTargetIP(rd.Addr)
+	case dnsrdatav2.AAAA:
+		rc.SetTargetIP(rd.Addr)
 	case dnsrdatav2.CAA:
 		rc.SetTargetCAA(rd.Flag, rd.Tag, rd.Value)
 	case dnsrdatav2.CNAME:
