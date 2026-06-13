@@ -33,6 +33,7 @@ func (config *DNSConfig) ImportRawRecords() error {
 			typeName := rawRec.Type
 			//fmt.Printf("DEBUG: dc.Name=%s raw.Type=%s filepos=%s fp=%s\n", dc.Name, rawRec.Type, rawRec.FilePos, filePos)
 
+			//fmt.Printf("DEBUG: IsBuilder(%q) = %v\n", typeName, IsBuilder(typeName))
 			if IsBuilder(typeName) {
 				records, err := dc.runBuilder(typeName, rawRec.TTL, rawRec.Args)
 				if err != nil {

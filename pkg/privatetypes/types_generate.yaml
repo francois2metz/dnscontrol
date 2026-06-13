@@ -100,10 +100,10 @@ types:
         type: RawString
         structtag: "json:\"sr_rulesetruleid,omitempty\""
         comment: "ID of this rule within the ruleset (populated by API)"
-      - name: SRDisplay
-        type: RawString
-        structtag: "json:\"sr_display,omitempty\""
-        comment: "How is this displayed to the user (SetTarget) for CF_SINGLE_REDIRECT"
+#      - name: SRDisplay
+#        type: RawString
+#        structtag: "json:\"sr_display,omitempty\""
+#        comment: "How is this displayed to the user (SetTarget) for CF_SINGLE_REDIRECT"
 
     test_data:
       - name: ""

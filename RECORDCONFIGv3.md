@@ -102,9 +102,11 @@ dc.AddRecordConfig(models.MakeTestRCParse(label, ttl, type, args))          doma
 
 ### How to add a non-standard type.
 
-* Z
-
 * Same as above plus...
+
+### How to add a Builder
+
+* abc
 
 Thoughts:
 

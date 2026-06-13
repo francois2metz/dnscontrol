@@ -34,7 +34,6 @@
           "name_unicode": "@",
           "rdata": {
             "Code": 301,
-            "SRDisplay": "",
             "SRName": "301,test1.foo.com,https://goo.com/$1",
             "SRRRulesetID": "",
             "SRRRulesetRuleID": "",
@@ -52,7 +51,6 @@
           "name_unicode": "@",
           "rdata": {
             "Code": 302,
-            "SRDisplay": "",
             "SRName": "302,test2.foo.com,https://goo.com/$1",
             "SRRRulesetID": "",
             "SRRRulesetRuleID": "",

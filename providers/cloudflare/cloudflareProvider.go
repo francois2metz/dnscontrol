@@ -22,7 +22,8 @@ import (
 	"github.com/DNSControl/dnscontrol/v4/pkg/transform"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
 	"github.com/DNSControl/dnscontrol/v4/pkg/zonecache"
-	"github.com/DNSControl/dnscontrol/v4/providers/cloudflare/rtypes/cfsingleredirect"
+	//"github.com/DNSControl/dnscontrol/v4/providers/cloudflare/rtypes/cfsingleredirect"
+	//_ "github.com/DNSControl/dnscontrol/v4/pkg/privatetypes"
 )
 
 /*
@@ -703,7 +704,7 @@ func (c *cloudflareProvider) preprocessConfig(dc *models.DomainConfig) error {
 	return nil
 }
 
-func (c *cloudflareProvider) LogTranscode(zone string, redirect *cfsingleredirect.SingleRedirectConfig) error {
+func (c *cloudflareProvider) LogTranscode(zone string, redirect *privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT) error {
 	// No filename? Don't log anything.
 	filename := c.tcLogFilename
 	if filename == "" {

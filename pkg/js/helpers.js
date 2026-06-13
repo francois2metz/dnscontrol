@@ -410,12 +410,12 @@ function R53_ZONE(zone_id) {
     return function (r) {
         if (_isDomain(r)) {
             r.meta.zone_id = zone_id;
-            console.debug("R53_Opt store zoneid in domainmeta", zone_id);
+            //console.debug("R53_Opt store zoneid in domainmeta", zone_id);
         } else if (_.isObject(r.r53_alias)) {
             r.r53_alias['zone_id'] = zone_id;
-            console.debug("R53_Opt store zoneid in recordr53alias", zone_id);
+            //console.debug("R53_Opt store zoneid in recordr53alias", zone_id);
         } else {
-            console.debug("R53_Opt MAKE  zoneid in recordr53alias", zone_id);
+            //console.debug("R53_Opt MAKE  zoneid in recordr53alias", zone_id);
             r.r53_alias = { zone_id: zone_id };
         }
     };
@@ -2620,5 +2620,5 @@ var CF_REDIRECT = rawrecordBuilder('CF_REDIRECT', true);
 var CF_SINGLE_REDIRECT = rawrecordBuilder('CLOUDFLAREAPI_SINGLE_REDIRECT', true);
 var CF_TEMP_REDIRECT = rawrecordBuilder('CF_TEMP_REDIRECT', true);
 var DS = rawrecordBuilder('DS');
-var RP = rawrecordBuilder('RP');
 var R53_ALIAS = rawrecordBuilder('R53_ALIAS', false, r53AliasOptions);
+var RP = rawrecordBuilder('RP');

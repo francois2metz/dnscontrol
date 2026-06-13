@@ -17,7 +17,6 @@ type CLOUDFLAREAPISINGLEREDIRECT struct {
 	SRThen           string
 	SRRRulesetID     string
 	SRRRulesetRuleID string
-	SRDisplay        string
 }
 
 func (rd CLOUDFLAREAPISINGLEREDIRECT) Len() int {
