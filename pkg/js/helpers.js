@@ -2620,7 +2620,10 @@ function rawrecordBuilder(type, noLabel, optionalsFn) {
 // PLEASE KEEP THIS LIST ALPHABETICAL!
 
 var CF_REDIRECT = rawrecordBuilder('CF_REDIRECT', true);
-var CF_SINGLE_REDIRECT = rawrecordBuilder('CLOUDFLAREAPI_SINGLE_REDIRECT',true);
+var CF_SINGLE_REDIRECT = rawrecordBuilder(
+    'CLOUDFLAREAPI_SINGLE_REDIRECT',
+    true
+);
 var CF_TEMP_REDIRECT = rawrecordBuilder('CF_TEMP_REDIRECT', true);
 var DS = rawrecordBuilder('DS');
 var R53_ALIAS = rawrecordBuilder('R53_ALIAS', false, r53AliasOptions);
