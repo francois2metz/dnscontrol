@@ -457,7 +457,7 @@ func cfSingleRedirectEnabled() bool {
 }
 
 func cfSingleRedirect(name string, code any, when, then string) *models.RecordConfig {
-	r, err := globalDC.NewRecordConfig("@", defaultTTL, privatetypes.TypeCLOUDFLAREAPISINGLEREDIRECT, name, code, when, then)
+	r, err := globalDC.NewRecordConfig("@", 0, privatetypes.TypeCLOUDFLAREAPISINGLEREDIRECT, name, code, when, then)
 	panicOnErr(err)
 	return r
 }
