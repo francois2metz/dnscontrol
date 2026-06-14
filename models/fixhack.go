@@ -23,7 +23,9 @@ func (rc *RecordConfig) FixUp(origin string) {
 		var err error
 		tn, err := dnsutilv2.StringToType(rc.Type)
 		if err != nil {
-			panic(fmt.Sprintf("BUG: FixUp: Unknown type %s", rc.Type))
+			s := fmt.Sprintf("BUG: FixUp: Unknown type %s", rc.Type)
+			fmt.Println(s)
+			panic(s)
 		}
 		rc.TypeNum = tn
 	}
@@ -89,7 +91,9 @@ func (rc *RecordConfig) FixUp(origin string) {
 		case "HTTPS":
 			rd, err := MakeHTTPS(origin, nil, rc.SvcPriority, rc.GetTargetField(), rc.SvcParams)
 			if err != nil {
-				panic(fmt.Sprintf("BUG: FixUp: MakeHTTPS failed for record %s IN %s %s: %v", rc.NameFQDN, rc.Type, rc.GetTargetField(), err))
+				s := fmt.Sprintf("BUG: FixUp: MakeHTTPS failed for record %s IN %s %s: %v", rc.NameFQDN, rc.Type, rc.GetTargetField(), err)
+				fmt.Println(s)
+				panic(s)
 			}
 			rc.RDATA = rd
 
@@ -161,9 +165,11 @@ func (rc *RecordConfig) FixUp(origin string) {
 			rc.RDATA, err = privatetypesrdata.MakeURL301(origin, nil, rc.GetTargetField())
 
 		default:
+			fmt.Printf("RDATA FIXUP NOT IMPLEMENTED TYPE=%q", rc.Type)
 			panic(fmt.Sprintf("RDATA FIXUP NOT IMPLEMENTED TYPE=%q", rc.Type))
 		}
 		if err != nil {
+			fmt.Printf("BUG: FixUp: Make%s( failed for record %s IN %s %s: %v", rc.Type, rc.NameFQDN, rc.Type, rc.GetTargetField(), err)
 			panic(fmt.Sprintf("BUG: FixUp: Make%s( failed for record %s IN %s %s: %v", rc.Type, rc.NameFQDN, rc.Type, rc.GetTargetField(), err))
 		}
 	}

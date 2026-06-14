@@ -10,6 +10,7 @@ DELETE THIS BEFORE THE RELEASE
 ## Extra testing needed
 
 * BIND: SOA handling has been rewritten to be easier to debug and more reliable. Shouldn't have any user-visible changes but please be on the lookout.
+* CLOUDFLAREAPI: CF_WORKER_ROUTES() need extra testing. Internally they were represented sometimes as `WORKER_ROUTE` and sometimes as `CF_WORKER_ROUTE`. It's amazing such complex code ever worked.  Now we use `CF_WORKER_ROUTE` exclusively. The changes were core to the worker feature. Pleaes give extra attending and testing.
 
 ## Developer notes
 

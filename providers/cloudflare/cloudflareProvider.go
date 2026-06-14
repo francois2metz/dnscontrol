@@ -385,7 +385,7 @@ func genComparableWithMgmt(rec *models.RecordConfig, manageComments, manageTags 
 
 func (c *cloudflareProvider) mkCreateCorrection(newrec *models.RecordConfig, domainID, msg string) []*models.Correction {
 	switch newrec.Type {
-	case "WORKER_ROUTE":
+	case "CF_WORKER_ROUTE":
 		return []*models.Correction{{
 			Msg: msg,
 			F:   func() error { return c.createWorkerRoute(domainID, newrec.GetTargetField()) },
@@ -406,7 +406,7 @@ func (c *cloudflareProvider) mkCreateCorrection(newrec *models.RecordConfig, dom
 func (c *cloudflareProvider) mkChangeCorrection(oldrec, newrec *models.RecordConfig, domainID string, msg string) []*models.Correction {
 	var idTxt string
 	switch oldrec.Type {
-	case "WORKER_ROUTE":
+	case "CF_WORKER_ROUTE":
 		idTxt = oldrec.Original.(cloudflare.WorkerRoute).ID
 	case "CLOUDFLAREAPI_SINGLE_REDIRECT":
 		idTxt = oldrec.RDATA.(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT).SRRRulesetID
@@ -423,7 +423,7 @@ func (c *cloudflareProvider) mkChangeCorrection(oldrec, newrec *models.RecordCon
 				return c.updateSingleRedirect(domainID, oldrec, newrec)
 			},
 		}}
-	case "WORKER_ROUTE":
+	case "CF_WORKER_ROUTE":
 		return []*models.Correction{{
 			Msg: msg,
 			F: func() error {
@@ -446,7 +446,7 @@ func (c *cloudflareProvider) mkDeleteCorrection(recType string, origRec *models.
 	switch recType {
 	case "PAGE_RULE":
 		idTxt = origRec.Original.(cloudflare.PageRule).ID
-	case "WORKER_ROUTE":
+	case "CF_WORKER_ROUTE":
 		idTxt = origRec.Original.(cloudflare.WorkerRoute).ID
 	case "CLOUDFLAREAPI_SINGLE_REDIRECT":
 		idTxt = origRec.Original.(cloudflare.RulesetRule).ID
@@ -461,7 +461,7 @@ func (c *cloudflareProvider) mkDeleteCorrection(recType string, origRec *models.
 			switch recType {
 			// case "PAGE_RULE":
 			// 	return c.deletePageRule(origRec.Original.(cloudflare.PageRule).ID, domainID)
-			case "WORKER_ROUTE":
+			case "CF_WORKER_ROUTE":
 				return c.deleteWorkerRoute(origRec.Original.(cloudflare.WorkerRoute).ID, domainID)
 			case "CLOUDFLAREAPI_SINGLE_REDIRECT":
 				return c.deleteSingleRedirects(domainID, *origRec.RDATA.(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT))
@@ -673,7 +673,7 @@ func (c *cloudflareProvider) preprocessConfig(dc *models.DomainConfig) error {
 				return errors.New("invalid data specified for cloudflare worker record")
 			}
 			rec.TTL = 1
-			rec.Type = "WORKER_ROUTE"
+			rec.Type = "CF_WORKER_ROUTE"
 		}
 	}
 

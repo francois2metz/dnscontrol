@@ -461,7 +461,7 @@ func (c *cloudflareProvider) getWorkerRoutes(id string, domain string) ([]*model
 	for _, pr := range res.Routes {
 		thisPr := pr
 		r := &models.RecordConfig{
-			Type:     "WORKER_ROUTE",
+			Type:     "CF_WORKER_ROUTE",
 			Original: thisPr,
 			TTL:      1,
 		}
