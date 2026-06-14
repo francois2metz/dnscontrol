@@ -18,7 +18,6 @@ import (
 
 	"github.com/DNSControl/dnscontrol/v4/models"
 	"github.com/DNSControl/dnscontrol/v4/pkg/diff2"
-	"github.com/DNSControl/dnscontrol/v4/pkg/privatetypes"
 	"github.com/DNSControl/dnscontrol/v4/pkg/providers"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
 	"github.com/DNSControl/dnscontrol/v4/pkg/zonecache"
@@ -119,13 +118,13 @@ func init() {
 	})
 }
 
-// var defaultNameservers = []string{
-// 	"ns1.he.net",
-// 	"ns2.he.net",
-// 	"ns3.he.net",
-// 	"ns4.he.net",
-// 	"ns5.he.net",
-// }
+var defaultNameservers = []string{
+	"ns1.he.net",
+	"ns2.he.net",
+	"ns3.he.net",
+	"ns4.he.net",
+	"ns5.he.net",
+}
 
 const (
 	apiEndpoint     = "https://dns.he.net/"
@@ -229,8 +228,7 @@ func (c *hednsProvider) EnsureZoneExists(domain string, metadata map[string]stri
 
 // GetNameservers returns the default HEDNS nameservers.
 func (c *hednsProvider) GetNameservers(_ string) ([]*models.Nameserver, error) {
-	//return models.ToNameservers(defaultNameservers)
-	return models.ToNameservers(nil)
+	return models.ToNameservers(defaultNameservers)
 }
 
 // preprocessConfig normalises HEDNS-specific metadata on desired records.
@@ -408,7 +406,7 @@ func (c *hednsProvider) getDiff2DomainCorrections(dc *models.DomainConfig, recor
 }
 
 // setDDNSKeyForNewRecord sets the DDNS key on a newly created record.
-func (c *hednsProvider) setDDNSKeyForNewRecord(zoneID uint64, _ string, record *models.RecordConfig, key string) error {
+func (c *hednsProvider) setDDNSKeyForNewRecord(zoneID uint64, domain string, record *models.RecordConfig, key string) error {
 	return c.setRecordDDNSKey(zoneID, record.GetLabelFQDN(), key)
 }
 
@@ -486,9 +484,7 @@ func (c *hednsProvider) GetZoneRecords(dc *models.DomainConfig) (models.Records,
 		}
 
 		var rc *models.RecordConfig
-
-		if privatetypes.IsModernType(rec.Type) {
-			rc, err = dc.NewRecordConfigParse(rec.Name, rec.TTL, rec.Type, rec.Data)
+		if false {
 		} else {
 			rc = &models.RecordConfig{Type: rec.Type, TTL: rec.TTL}
 			rc.SetLabelFromFQDN(rec.Name, domain)
