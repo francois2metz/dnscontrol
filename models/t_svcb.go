@@ -81,7 +81,11 @@ func (rc *RecordConfig) SetTargetSVCBString(origin, contents string) error {
 	if err != nil {
 		return fmt.Errorf("could not parse SVCB record: %w", err)
 	}
-	rc.RDATA = rrv2
+
+	//rc.RDATA = rrv2
+	fmt.Printf("DEBUG: Should be a pointer: %T\n", rrv2)
+	sr := rrv2.(dnsrdatav2.SVCB)
+	rc.RDATA = &sr
 
 	switch r := record.(type) {
 	case *dnsv1.HTTPS:

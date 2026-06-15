@@ -240,7 +240,37 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 	rc.NameFQDNUnicode = makeNameFQDNUnicode(rc.NameFQDN)
 
 	rc.FixUp(origin) // Add .ComparableV3
+	err := backfill(rc)
+	if err != nil {
+		return nil, err
+	}
+	return rc, nil
+}
 
+// func newRecordConfigHelperRC(origin, name string, ttl uint32, typeNum uint16, rd dnsv2.RDATA, metadata map[string]string) (*RecordConfig, error) {
+func newRecordConfigHelperRC(rc *RecordConfig, typeName string, contents string, origin string) error {
+	typeNum, err := dnsutilv2.StringToType(typeName)
+	if err != nil {
+		return err
+	}
+	rc.TypeNum = typeNum
+	rc.Type = typeName
+
+	rd, err := dnsv2.NewData(typeNum, contents, origin)
+	if err != nil {
+		return err
+	}
+	rc.RDATA = rd
+
+	rc.FixUp(origin) // Add .RDATA and .ComparableV3
+	err = backfill(rc)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func backfill(rc *RecordConfig) error {
 	// Hack to back-fill legacy fields. This will go away eventually.
 	switch rd := rc.RDATA.(type) {
 	case *dnsrdatav2.A:
@@ -315,7 +345,7 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 		case "SVCB":
 			// skip
 		default:
-			return nil, fmt.Errorf("assertion failed: NewRecordConfig back-fill has not implemented type %T", rd)
+			return fmt.Errorf("assertion failed: NewRecordConfig back-fill has not implemented type %T", rd)
 			// TODO:
 			//case privatetypes..AzureAlias:
 			//case privatetypes..LUA:
@@ -323,8 +353,7 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 			//case privatetypes..AKAMAITLC:
 		}
 	}
-
-	return rc, nil
+	return nil
 }
 
 func anyToTypeNum(a any) (uint16, error) {
