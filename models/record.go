@@ -185,7 +185,7 @@ func (dc *DomainConfig) NewRecordConfigParse(name string, ttl uint32, typeAny an
 	if err != nil {
 		return nil, err
 	}
-	return newRecordConfigHelper(dc.Name, name, ttl, typeNum, rd, nil)
+	return newRecordConfigHelper(dc.Name, name, ttl, typeNum, PointerToRDATA(rd), nil)
 }
 
 // NewRecordConfigFromDnsconfigjs is only for use by dnsrr.go.
@@ -234,6 +234,8 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 		RDATA:    rd,
 		Metadata: metadata,
 	}
+	rc.ValidateRDATA()
+
 	rc.Name = name
 	rc.NameUnicode = makeLabelNameUnicode(name)
 	rc.NameFQDN = makeLabelNameFQDN(origin, name)
@@ -260,7 +262,18 @@ func newRecordConfigHelperRC(rc *RecordConfig, typeName string, contents string,
 	if err != nil {
 		return err
 	}
-	rc.RDATA = rd
+
+	switch v := rd.(type) {
+	case dnsrdatav2.A:
+		rc.RDATA = &v
+	case dnsrdatav2.TXT:
+		rc.RDATA = &v
+	case dnsrdatav2.RP:
+		rc.RDATA = &v
+	default:
+		fmt.Printf("DEBUG: newRecordConfigHelperRC: unknown type %T\n", v)
+	}
+	rc.ValidateRDATA()
 
 	rc.FixUp(origin) // Add .RDATA and .ComparableV3
 	err = backfill(rc)
@@ -309,6 +322,8 @@ func backfill(rc *RecordConfig) error {
 		rc.SetTargetSSHFP(rd.Algorithm, rd.Type, rd.FingerPrint)
 	case *dnsrdatav2.TLSA:
 		rc.SetTargetTLSA(rd.Usage, rd.Selector, rd.MatchingType, rd.Certificate)
+	case *dnsrdatav2.TXT:
+		rc.SetTargetTXTs(rd.Txt)
 	default:
 		switch rc.Type {
 		case "CLOUDFLAREAPI_SINGLE_REDIRECT":

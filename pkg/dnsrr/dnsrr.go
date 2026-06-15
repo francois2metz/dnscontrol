@@ -57,6 +57,7 @@ func helperRRtoRC(rr dnsv1.RR, origin string, fixBug bool) (models.RecordConfig,
 		err = rc.SetTarget(v.Target)
 	case *dnsv1.DS:
 		if rec, err := models.NewRecordConfigForRRtoRC(origin, header.Name, header.Ttl, typeNum, v.KeyTag, v.Algorithm, v.DigestType, v.Digest); err == nil {
+			rec.ValidateRDATA()
 			return *rec, nil
 		}
 	case *dnsv1.DNSKEY:
@@ -77,6 +78,7 @@ func helperRRtoRC(rr dnsv1.RR, origin string, fixBug bool) (models.RecordConfig,
 		err = rc.SetTarget(v.Ptr)
 	case *dnsv1.RP:
 		if rec, err := models.NewRecordConfigForRRtoRC(origin, header.Name, header.Ttl, typeNum, v.Mbox, v.Txt); err == nil {
+			rec.ValidateRDATA()
 			return *rec, nil
 		}
 	case *dnsv1.SMIMEA:
@@ -153,9 +155,10 @@ func RRtoRCV2(rr dnsv2.RR, origin string) (models.RecordConfig, error) {
 	case *dnsv2.DNSKEY:
 		err = rc.SetTargetDNSKEY(v.Flags, v.Protocol, v.Algorithm, v.PublicKey)
 	case *dnsv2.HTTPS:
-		//err = rc.SetTargetSVCB(v.Priority, v.Target, v.Value)
-		//err = fmt.Errorf("RR type %s should be handled as modern type", ty)
-		rc.RDATA = rr.Data()
+		rd := rr.Data()
+		rdd := rd.(*dnsv2.HTTPS)
+		rc.RDATA = rdd
+		rc.ValidateRDATA()
 	case *dnsv2.LOC:
 		err = rc.SetTargetLOC(v.Version, v.Latitude, v.Longitude, v.Altitude, v.Size, v.HorizPre, v.VertPre)
 	case *dnsv2.MX:
@@ -170,6 +173,7 @@ func RRtoRCV2(rr dnsv2.RR, origin string) (models.RecordConfig, error) {
 		err = rc.SetTarget(v.Ptr)
 	case *dnsv2.RP:
 		if rec, err := models.NewRecordConfigForRRtoRC(origin, header.Name, ttl, typeNum, v.Mbox, v.Txt); err == nil {
+			rec.ValidateRDATA()
 			return *rec, nil
 		}
 	case *dnsv2.SMIMEA:
@@ -181,9 +185,10 @@ func RRtoRCV2(rr dnsv2.RR, origin string) (models.RecordConfig, error) {
 	case *dnsv2.SSHFP:
 		err = rc.SetTargetSSHFP(v.Algorithm, v.Type, v.FingerPrint)
 	case *dnsv2.SVCB:
-		//err = rc.SetTargetSVCB(v.Priority, v.Target, v.Value)
-		//err = fmt.Errorf("RR type %s should be handled as modern type", ty)
-		rc.RDATA = rr.Data()
+		rd := rr.Data()
+		rdd := rd.(*dnsv2.SVCB)
+		rc.RDATA = rdd
+		rc.ValidateRDATA()
 	case *dnsv2.TLSA:
 		err = rc.SetTargetTLSA(v.Usage, v.Selector, v.MatchingType, v.Certificate)
 	case *dnsv2.TXT:

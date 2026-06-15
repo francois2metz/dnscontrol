@@ -33,7 +33,7 @@ func (rd R53ALIAS) String() string {
 func MakeR53ALIAS(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) < 2 || len(args) > 4 {
-		return R53ALIAS{}, fmt.Errorf("R53_ALIAS expects 4 arguments, got %d: %+v", len(args), args)
+		return &R53ALIAS{}, fmt.Errorf("R53_ALIAS expects 4 arguments, got %d: %+v", len(args), args)
 	}
 	for len(args) < 4 {
 		args = append(args, "")

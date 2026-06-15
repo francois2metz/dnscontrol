@@ -35,7 +35,7 @@ func (rd CLOUDFLAREAPISINGLEREDIRECT) String() string {
 func MakeCLOUDFLAREAPISINGLEREDIRECT(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) != 4 {
-		return CLOUDFLAREAPISINGLEREDIRECT{}, fmt.Errorf("CLOUDFLAREAPI_SINGLE_REDIRECT expects 4 arguments, got %d: %+v", len(args), args)
+		return &CLOUDFLAREAPISINGLEREDIRECT{}, fmt.Errorf("CLOUDFLAREAPI_SINGLE_REDIRECT expects 4 arguments, got %d: %+v", len(args), args)
 	}
 	return &CLOUDFLAREAPISINGLEREDIRECT{
 		SRName: mustbe.RawString(args[0]),

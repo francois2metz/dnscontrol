@@ -26,7 +26,7 @@ func (rd AKAMAICDN) String() string {
 func MakeAKAMAICDN(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) != 1 {
-		return AKAMAICDN{}, fmt.Errorf("AKAMAICDN expects 1 arguments, got %d: %+v", len(args), args)
+		return &AKAMAICDN{}, fmt.Errorf("AKAMAICDN expects 1 arguments, got %d: %+v", len(args), args)
 	}
 	return &AKAMAICDN{
 		Target: mustbe.TargetHost(origin, args[0]),

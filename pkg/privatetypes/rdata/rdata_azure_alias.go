@@ -29,7 +29,7 @@ func (rd AZUREALIAS) String() string {
 func MakeAZUREALIAS(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) != 2 {
-		return AZUREALIAS{}, fmt.Errorf("AZURE_ALIAS expects 2 arguments, got %d: %+v", len(args), args)
+		return &AZUREALIAS{}, fmt.Errorf("AZURE_ALIAS expects 2 arguments, got %d: %+v", len(args), args)
 	}
 	return &AZUREALIAS{
 		AliasType: mustbe.RawString(args[0]),

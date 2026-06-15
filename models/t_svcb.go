@@ -52,6 +52,7 @@ func (rc *RecordConfig) SetTargetSVCB(priority uint16, target string, params []d
 		return fmt.Errorf("failed to create RDATA for SVCB record: %w", err)
 	}
 	rc.RDATA = rd
+	rc.ValidateRDATA()
 	rc.FixUp("")
 
 	return nil
@@ -81,11 +82,8 @@ func (rc *RecordConfig) SetTargetSVCBString(origin, contents string) error {
 	if err != nil {
 		return fmt.Errorf("could not parse SVCB record: %w", err)
 	}
-
-	//rc.RDATA = rrv2
-	fmt.Printf("DEBUG: Should be a pointer: %T\n", rrv2)
-	sr := rrv2.(dnsrdatav2.SVCB)
-	rc.RDATA = &sr
+	rc.RDATA = PointerToRDATA(rrv2)
+	rc.ValidateRDATA()
 
 	switch r := record.(type) {
 	case *dnsv1.HTTPS:
@@ -95,13 +93,15 @@ func (rc *RecordConfig) SetTargetSVCBString(origin, contents string) error {
 	}
 
 	if rc.SvcPriority == 0 {
-		rc.RDATA = dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: rc.GetTargetField()}
+		rc.RDATA = &dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: rc.GetTargetField()}
+		rc.ValidateRDATA()
 	} else {
 		rd, err := dnsv2.NewData(dnsv2.TypeSVCB, fmt.Sprintf("%d %s %s", rc.SvcPriority, rc.GetTargetField(), rc.SvcParams), origin)
 		if err != nil {
 			panic(fmt.Sprintf("BUG: Failed to create RDATA for HTTPS record: %v", err))
 		}
 		rc.RDATA = rd
+		rc.ValidateRDATA()
 	}
 	rc.FixUp(".")
 

@@ -30,7 +30,7 @@ func (rd URL301) String() string {
 func MakeURL301(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) != 3 {
-		return URL301{}, fmt.Errorf("URL301 expects 3 arguments, got %d: %+v", len(args), args)
+		return &URL301{}, fmt.Errorf("URL301 expects 3 arguments, got %d: %+v", len(args), args)
 	}
 	return &URL301{
 		Location:           mustbe.TargetHost(origin, args[0]),

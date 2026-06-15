@@ -33,7 +33,7 @@ func (rd PORKBUNURLFWD) String() string {
 func MakePORKBUNURLFWD(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) != 4 {
-		return PORKBUNURLFWD{}, fmt.Errorf("PORKBUN_URLFWD expects 4 arguments, got %d: %+v", len(args), args)
+		return &PORKBUNURLFWD{}, fmt.Errorf("PORKBUN_URLFWD expects 4 arguments, got %d: %+v", len(args), args)
 	}
 	return &PORKBUNURLFWD{
 		Target:      mustbe.RawString(args[0]),

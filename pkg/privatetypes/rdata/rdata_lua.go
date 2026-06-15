@@ -29,7 +29,7 @@ func (rd LUA) String() string {
 func MakeLUA(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) != 2 {
-		return LUA{}, fmt.Errorf("LUA expects 2 arguments, got %d: %+v", len(args), args)
+		return &LUA{}, fmt.Errorf("LUA expects 2 arguments, got %d: %+v", len(args), args)
 	}
 	return &LUA{
 		LuaType:    mustbe.RawString(args[0]),

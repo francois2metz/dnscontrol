@@ -535,14 +535,14 @@ func generateRdataFile(t *TypeDef) error {
 	maxArgs := minArgs + len(t.OptionalFields)
 	if len(t.Fields) == 0 && len(t.OptionalFields) == 0 {
 		fmt.Fprintf(&buf, "\tif len(args) != 0 {\n")
-		fmt.Fprintf(&buf, "\t\treturn %s{}, fmt.Errorf(\"%s expects 0 arguments, got %%d: %%+v\", len(args), args)\n", typeName, displayName)
+		fmt.Fprintf(&buf, "\t\treturn &%s{}, fmt.Errorf(\"%s expects 0 arguments, got %%d: %%+v\", len(args), args)\n", typeName, displayName)
 	} else {
 		if len(t.OptionalFields) == 0 {
 			fmt.Fprintf(&buf, "\tif len(args) != %d {\n", minArgs)
 		} else {
 			fmt.Fprintf(&buf, "\tif len(args) < %d || len(args) > %d {\n", minArgs, maxArgs)
 		}
-		fmt.Fprintf(&buf, "\t\treturn %s{}, fmt.Errorf(\"%s expects %d arguments, got %%d: %%+v\", len(args), args)\n", typeName, displayName, (len(t.Fields) + len(t.OptionalFields)))
+		fmt.Fprintf(&buf, "\t\treturn &%s{}, fmt.Errorf(\"%s expects %d arguments, got %%d: %%+v\", len(args), args)\n", typeName, displayName, (len(t.Fields) + len(t.OptionalFields)))
 	}
 
 	buf.WriteString("\t}\n")

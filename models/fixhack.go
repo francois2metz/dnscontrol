@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"runtime/debug"
 	"strings"
 
 	dnsutilv2 "codeberg.org/miekg/dns/dnsutil"
@@ -173,6 +174,7 @@ func (rc *RecordConfig) FixUp(origin string) {
 			panic(fmt.Sprintf("BUG: FixUp: Make%s( failed for record %s IN %s %s: %v", rc.Type, rc.NameFQDN, rc.Type, rc.GetTargetField(), err))
 		}
 	}
+	rc.ValidateRDATA()
 
 	// .ComparableV3:
 	if rc.ComparableV3 == "" {
@@ -201,4 +203,25 @@ func (rc *RecordConfig) FixUp(origin string) {
 		// 	rc.ComparableV3 = rc.ComparableV3 + "W"
 		// }
 	}
+}
+
+func (rc *RecordConfig) ValidateRDATA() {
+
+	if rc.RDATA == nil {
+		return
+	}
+
+	tn := fmt.Sprintf("%T", rc.RDATA)
+
+	if strings.HasPrefix(tn, "*rdata.") {
+		return
+	}
+	if strings.HasPrefix(tn, "*privatetypesrdata.") {
+		return
+	}
+
+	l := fmt.Sprintf("\nDEBUG: ValidateRDATA: %s\n", tn)
+	fmt.Println(l)
+	fmt.Println(string(debug.Stack()))
+	panic(l)
 }

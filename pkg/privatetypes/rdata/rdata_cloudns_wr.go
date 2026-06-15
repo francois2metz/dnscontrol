@@ -27,7 +27,7 @@ func (rd CLOUDNSWR) String() string {
 func MakeCLOUDNSWR(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) != 1 {
-		return CLOUDNSWR{}, fmt.Errorf("CLOUDNS_WR expects 1 arguments, got %d: %+v", len(args), args)
+		return &CLOUDNSWR{}, fmt.Errorf("CLOUDNS_WR expects 1 arguments, got %d: %+v", len(args), args)
 	}
 	return &CLOUDNSWR{
 		Target: mustbe.RawString(args[0]),

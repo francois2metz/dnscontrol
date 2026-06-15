@@ -496,6 +496,7 @@ func bunnyPullZone(name, pullZoneID string) *models.RecordConfig {
 
 func aghAPassthrough(pattern, target string) *models.RecordConfig {
 	r := makeRecAndFix(pattern, target, "ADGUARDHOME_A_PASSTHROUGH")
+	r.ValidateRDATA()
 	return r
 }
 

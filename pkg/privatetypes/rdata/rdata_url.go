@@ -31,7 +31,7 @@ func (rd URL) String() string {
 func MakeURL(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) != 3 {
-		return URL{}, fmt.Errorf("URL expects 3 arguments, got %d: %+v", len(args), args)
+		return &URL{}, fmt.Errorf("URL expects 3 arguments, got %d: %+v", len(args), args)
 	}
 	return &URL{
 		Location:           mustbe.RawString(args[0]),
