@@ -160,15 +160,17 @@ func (dc *DomainConfig) NewRecordConfig(name string, ttl uint32, typeAny any, ar
 		return nil, err
 	}
 
-	//rd, err := privatetypes.TypeToMakeRDATA[typeNum](dc.Name, args...)
 	f, ok := privatetypes.TypeToMakeRDATA[typeNum]
 	if !ok {
+		fmt.Printf("NewRecordConfig: failed TypeToMakeRDATA[%d] == nil", typeNum)
 		return nil, fmt.Errorf("NewRecordConfig: failed TypeToMakeRDATA[%d] == nil", typeNum)
 	}
 	rd, err := f(dc.Name, nil, args...)
 	if err != nil {
+		log.Printf("NewRecordConfig: Failed to create RDATA for type %d: %+v", typeNum, err)
 		log.Fatalf("NewRecordConfig: Failed to create RDATA for type %d: %+v", typeNum, err)
 	}
+	//fmt.Printf("DEBUG rd=%T\n", rd)
 
 	return newRecordConfigHelper(dc.Name, name, ttl, typeNum, rd, nil)
 }
@@ -191,6 +193,7 @@ func (dc *DomainConfig) NewRecordConfigFromDnsconfigjs(name string, ttl uint32, 
 
 	rd, err := privatetypes.TypeToMakeRDATA[typeNum](dc.Name, metadata, args...)
 	if err != nil {
+		fmt.Printf("NewRecordConfigFromDnsconfigjs: Failed to create RDATA for type %s: %v", dnsutilv2.TypeToString(typeNum), err)
 		log.Fatalf("NewRecordConfigFromDnsconfigjs: Failed to create RDATA for type %s: %v", dnsutilv2.TypeToString(typeNum), err)
 	}
 	return newRecordConfigHelper(dc.Name, name, ttl, typeNum, rd, metadata)
@@ -240,48 +243,48 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 
 	// Hack to back-fill legacy fields. This will go away eventually.
 	switch rd := rc.RDATA.(type) {
-	case dnsrdatav2.A:
+	case *dnsrdatav2.A:
 		rc.SetTargetIP(rd.Addr)
-	case dnsrdatav2.AAAA:
+	case *dnsrdatav2.AAAA:
 		rc.SetTargetIP(rd.Addr)
-	case dnsrdatav2.CAA:
+	case *dnsrdatav2.CAA:
 		rc.SetTargetCAA(rd.Flag, rd.Tag, rd.Value)
-	case dnsrdatav2.CNAME:
+	case *dnsrdatav2.CNAME:
 		rc.SetTarget(rd.Target)
-	case dnsrdatav2.DS:
+	case *dnsrdatav2.DS:
 		rc.SetTargetDS(rd.KeyTag, rd.Algorithm, rd.DigestType, rd.Digest)
-	case dnsrdatav2.DNSKEY:
+	case *dnsrdatav2.DNSKEY:
 		rc.SetTargetDNSKEY(rd.Flags, rd.Protocol, rd.Algorithm, rd.PublicKey)
-	case dnsrdatav2.LOC:
+	case *dnsrdatav2.LOC:
 		rc.SetTargetLOC(rd.Version, rd.Latitude, rd.Longitude, rd.Altitude, rd.Size, rd.HorizPre, rd.VertPre)
-	case dnsrdatav2.MX:
+	case *dnsrdatav2.MX:
 		rc.SetTargetMX(rd.Preference, rd.Mx)
-	case dnsrdatav2.NS:
+	case *dnsrdatav2.NS:
 		rc.SetTarget(rd.Ns)
-	case dnsrdatav2.NAPTR:
+	case *dnsrdatav2.NAPTR:
 		rc.SetTargetNAPTR(rd.Order, rd.Preference, rd.Flags, rd.Service, rd.Regexp, rd.Service)
-	case dnsrdatav2.RP:
+	case *dnsrdatav2.RP:
 		// noop -- no legacy fields
-	case dnsrdatav2.SMIMEA:
+	case *dnsrdatav2.SMIMEA:
 		rc.SetTargetSMIMEA(rd.Usage, rd.Selector, rd.MatchingType, rd.Certificate)
-	case dnsrdatav2.SOA:
+	case *dnsrdatav2.SOA:
 		rc.SetTargetSOA(rd.Ns, rd.Mbox, rd.Serial, rd.Refresh, rd.Retry, rd.Expire, rd.Minttl)
-	case dnsrdatav2.SRV:
+	case *dnsrdatav2.SRV:
 		rc.SetTargetSRV(rd.Priority, rd.Weight, rd.Port, rd.Target)
-	case dnsrdatav2.SVCB: // There is no dnsrdatav2.HTTPS
+	case *dnsrdatav2.SVCB: // There is no dnsrdatav2.HTTPS
 		rc.SvcPriority = rd.Priority
 		rc.SetTarget(rd.Target)
 		rc.SvcParams = svcbv2ValueToString(rd.Value)
-	case dnsrdatav2.SSHFP:
+	case *dnsrdatav2.SSHFP:
 		rc.SetTargetSSHFP(rd.Algorithm, rd.Type, rd.FingerPrint)
-	case dnsrdatav2.TLSA:
+	case *dnsrdatav2.TLSA:
 		rc.SetTargetTLSA(rd.Usage, rd.Selector, rd.MatchingType, rd.Certificate)
 	default:
 		switch rc.Type {
 		case "CLOUDFLAREAPI_SINGLE_REDIRECT":
 			// no-op
 		case "PORKBUN_URLFWD":
-			p := rd.(privatetypesrdata.PORKBUNURLFWD)
+			p := rd.(*privatetypesrdata.PORKBUNURLFWD)
 			if rc.Metadata == nil {
 				rc.Metadata = map[string]string{}
 			}
@@ -289,7 +292,7 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 			rc.Metadata["includePath"] = p.IncludePath
 			rc.Metadata["wildcard"] = p.Wildcard
 		case "R53_ALIAS":
-			p := rd.(privatetypesrdata.R53ALIAS)
+			p := rd.(*privatetypesrdata.R53ALIAS)
 			if rc.R53Alias == nil {
 				rc.R53Alias = map[string]string{}
 			}
@@ -299,7 +302,7 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 			rc.R53Alias["evaluate_target_health"] = p.EvalTargetHealth
 
 		case "URL":
-			u := rd.(privatetypesrdata.URL)
+			u := rd.(*privatetypesrdata.URL)
 			rc.SetTarget(u.Location)
 			if rc.Metadata == nil {
 				rc.Metadata = map[string]string{}
@@ -307,8 +310,10 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 			rc.Metadata["includePath"] = fmt.Sprintf("%t", u.PorkbunIncludePath)
 			rc.Metadata["wildcard"] = fmt.Sprintf("%t", u.PorkbunWildCard)
 		case "URL301":
-			u := rd.(privatetypesrdata.URL301)
+			u := rd.(*privatetypesrdata.URL301)
 			rc.SetTarget(u.Location)
+		case "SVCB":
+			// skip
 		default:
 			return nil, fmt.Errorf("assertion failed: NewRecordConfig back-fill has not implemented type %T", rd)
 			// TODO:
@@ -872,6 +877,13 @@ func (rc *RecordConfig) GetSVCBValue() []dnsv1.SVCBKeyValue {
 func (rc *RecordConfig) IsModernType() bool {
 	//return rc.RDATA != nil
 	return false
+}
+
+func (rc *RecordConfig) IsTTLSignificant() bool {
+	// "private types" don't really have a useful TTL.
+	// There may be better ways to determine this.  Right now
+	// this only affects checkRecordSetHasMultipleTTLs().
+	return rc.TypeNum < 65280
 }
 
 // Records is a list of *RecordConfig.

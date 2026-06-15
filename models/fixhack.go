@@ -37,23 +37,23 @@ func (rc *RecordConfig) FixUp(origin string) {
 		switch rc.Type {
 
 		case "BUNNY_DNS_PZ":
-			rc.RDATA = privatetypesrdata.BUNNYDNSPZ{}
+			rc.RDATA = &privatetypesrdata.BUNNYDNSPZ{}
 		case "LUA":
-			rc.RDATA = privatetypesrdata.LUA{}
+			rc.RDATA = &privatetypesrdata.LUA{}
 		case "CLOUDFLAREAPI_SINGLE_REDIRECT":
-			rc.RDATA = privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT{}
+			rc.RDATA = &privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT{}
 		case "CLOUDNS_WR":
-			rc.RDATA = privatetypesrdata.CLOUDNSWR{}
+			rc.RDATA = &privatetypesrdata.CLOUDNSWR{}
 		case "NETLIFY":
-			rc.RDATA = privatetypesrdata.NETLIFY{}
+			rc.RDATA = &privatetypesrdata.NETLIFY{}
 		case "NETLIFYV6":
-			rc.RDATA = privatetypesrdata.NETLIFYV6{}
+			rc.RDATA = &privatetypesrdata.NETLIFYV6{}
 		case "AKAMAICDN":
-			rc.RDATA = privatetypesrdata.AKAMAICDN{}
+			rc.RDATA = &privatetypesrdata.AKAMAICDN{}
 		case "AKAMAITLC":
-			rc.RDATA = privatetypesrdata.AKAMAITLC{}
+			rc.RDATA = &privatetypesrdata.AKAMAITLC{}
 		case "BUNNY_DNS_RDR":
-			rc.RDATA = privatetypesrdata.BUNNYDNSRDR{}
+			rc.RDATA = &privatetypesrdata.BUNNYDNSRDR{}
 
 		case "A":
 			rc.RDATA, err = MakeA(origin, nil, rc.GetTargetIP())
@@ -118,7 +118,7 @@ func (rc *RecordConfig) FixUp(origin string) {
 		// case "PORKBUN_URLFWD":
 		// 	rc.RDATA, err = privatetypesrdata.MakePORKBUNURLFWD(origin, nil, []any{rc.GetTargetField()})
 		case "PORKBUN_URLFWD":
-			rc.RDATA = privatetypesrdata.PORKBUNURLFWD{
+			rc.RDATA = &privatetypesrdata.PORKBUNURLFWD{
 				Target:      rc.GetTargetField(),
 				TypeName:    rc.Metadata["type"],
 				IncludePath: rc.Metadata["includePath"],

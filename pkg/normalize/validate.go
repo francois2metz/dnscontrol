@@ -704,6 +704,12 @@ func checkRecordSetHasMultipleTTLs(records []*models.RecordConfig) (errs []error
 	// Find the inconsistencies:
 	m := make(map[string]map[uint32]map[string]bool)
 	for _, r := range records {
+		// if r.Type == "CLOUDFLAREAPI_SINGLE_REDIRECT" {
+		// 	continue
+		// }
+		if !r.IsTTLSignificant() {
+			continue
+		}
 		label := r.GetLabelFQDN()
 		ttl := r.TTL
 		rtype := r.Type

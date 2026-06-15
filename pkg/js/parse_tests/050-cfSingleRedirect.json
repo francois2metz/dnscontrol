@@ -83,6 +83,23 @@
           "typenum": 65289
         },
         {
+          "comparablev3": "namettl 302 whenttl thenttl",
+          "filepos": "[line:8:5]",
+          "name": "@",
+          "name_unicode": "@",
+          "rdata": {
+            "Code": 302,
+            "SRName": "namettl",
+            "SRRRulesetID": "",
+            "SRRRulesetRuleID": "",
+            "SRThen": "thenttl",
+            "SRWhen": "whenttl"
+          },
+          "ttl": 999,
+          "type": "CLOUDFLAREAPI_SINGLE_REDIRECT",
+          "typenum": 65289
+        },
+        {
           "filepos": "[line:2:5]",
           "meta": {
             "meta": "value"
