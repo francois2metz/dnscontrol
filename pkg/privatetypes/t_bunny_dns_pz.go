@@ -34,7 +34,7 @@ func (rr *BUNNYDNSPZ) Len() int {
 	return rr.Hdr.Len()
 }
 func (rr *BUNNYDNSPZ) Data() dnsv2.RDATA {
-	return &privatetypesrdata.BUNNYDNSPZ{}
+	return nil
 }
 func (rr *BUNNYDNSPZ) Clone() dnsv2.RR {
 	return &BUNNYDNSPZ{

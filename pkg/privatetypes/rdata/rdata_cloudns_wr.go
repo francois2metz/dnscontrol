@@ -3,15 +3,14 @@ package privatetypesrdata
 import (
 	"fmt"
 
-	"strings"
-
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
+	"strings"
 )
 
 type CLOUDNSWR struct {
-	Target string
+	Target               string
 }
 
 func (rd CLOUDNSWR) Len() int {
@@ -27,7 +26,7 @@ func (rd CLOUDNSWR) String() string {
 func MakeCLOUDNSWR(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) != 1 {
-		return &CLOUDNSWR{}, fmt.Errorf("CLOUDNS_WR expects 1 arguments, got %d: %+v", len(args), args)
+		return nil, fmt.Errorf("CLOUDNS_WR expects 1 arguments, got %d: %+v", len(args), args)
 	}
 	return &CLOUDNSWR{
 		Target: mustbe.RawString(args[0]),

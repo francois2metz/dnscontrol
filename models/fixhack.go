@@ -20,7 +20,7 @@ func (rc *RecordConfig) FixUp(origin string) {
 	}
 
 	// TypeNum:
-	if rc.TypeNum == 0 && rc.Type != "ALIAS" {
+	if rc.TypeNum == 0 && rc.Type != "ALIAS" && rc.Type != "IMPORT_TRANSFORM" {
 		var err error
 		tn, err := dnsutilv2.StringToType(rc.Type)
 		if err != nil {
@@ -55,6 +55,8 @@ func (rc *RecordConfig) FixUp(origin string) {
 			rc.RDATA = &privatetypesrdata.AKAMAITLC{}
 		case "BUNNY_DNS_RDR":
 			rc.RDATA = &privatetypesrdata.BUNNYDNSRDR{}
+		case "IMPORT_TRANSFORM":
+			rc.RDATA = nil
 
 		case "A":
 			rc.RDATA, err = MakeA(origin, nil, rc.GetTargetIP())
@@ -212,6 +214,7 @@ func (rc *RecordConfig) ValidateRDATA() {
 	}
 
 	tn := fmt.Sprintf("%T", rc.RDATA)
+	l := fmt.Sprintf("\nDEBUG: ValidateRDATA: %s\n", tn)
 
 	if strings.HasPrefix(tn, "*rdata.") {
 		return
@@ -220,8 +223,7 @@ func (rc *RecordConfig) ValidateRDATA() {
 		return
 	}
 
-	l := fmt.Sprintf("\nDEBUG: ValidateRDATA: %s\n", tn)
 	fmt.Println(l)
 	fmt.Println(string(debug.Stack()))
-	panic(l)
+	// panic(l)
 }

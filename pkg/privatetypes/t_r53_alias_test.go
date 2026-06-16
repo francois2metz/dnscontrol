@@ -12,7 +12,7 @@ func TestR53Alias_NormalUser(t *testing.T) {
 		Hdr: dnsv2.Header{Name: "example.org.", Class: dnsv2.ClassINET},
 		R53ALIAS: privatetypesrdata.R53ALIAS{
 			AliasType: "1",
-			Target:    "alice.",
+			Target: "alice.",
 		},
 	}
 	rry, err := dnsv2.New(y.String())

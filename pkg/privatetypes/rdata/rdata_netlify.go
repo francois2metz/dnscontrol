@@ -21,7 +21,7 @@ func (rd NETLIFY) String() string {
 func MakeNETLIFY(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) != 0 {
-		return &NETLIFY{}, fmt.Errorf("NETLIFY expects 0 arguments, got %d: %+v", len(args), args)
+		return nil, fmt.Errorf("NETLIFY expects 0 arguments, got %d: %+v", len(args), args)
 	}
-	return &NETLIFY{}, nil
+	return nil, nil
 }

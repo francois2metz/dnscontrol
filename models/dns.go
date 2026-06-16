@@ -182,7 +182,6 @@ type Correction struct {
 func (config *DNSConfig) PostProcess() error {
 	for _, domain := range config.Domains {
 		domain.PostProcess()
-		domain.FixLegacyDC()
 		// No need to call FixLegacyDC here. These records were created from dnsconfig.js, not from a provider.
 	}
 	return nil

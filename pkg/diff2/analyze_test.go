@@ -78,7 +78,7 @@ func makeRec(label, rtype, content string) *models.RecordConfig {
 	}
 	//fmt.Printf("DEBUG: makeRec should be pointer: %T\n", rrv2)
 	//r.RDATA = rrv2
-	r.RDATA = models.PointerToRDATA(rrv2)
+	r.RDATA = models.AssureItsAPointer(rrv2)
 	r.ValidateRDATA()
 	r.ComparableV3 = r.RDATA.String()
 	// End of hack

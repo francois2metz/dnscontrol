@@ -34,7 +34,7 @@ func (rr *NETLIFY) Len() int {
 	return rr.Hdr.Len()
 }
 func (rr *NETLIFY) Data() dnsv2.RDATA {
-	return &privatetypesrdata.NETLIFY{}
+	return nil
 }
 func (rr *NETLIFY) Clone() dnsv2.RR {
 	return &NETLIFY{

@@ -185,7 +185,7 @@ func (dc *DomainConfig) NewRecordConfigParse(name string, ttl uint32, typeAny an
 	if err != nil {
 		return nil, err
 	}
-	return newRecordConfigHelper(dc.Name, name, ttl, typeNum, PointerToRDATA(rd), nil)
+	return newRecordConfigHelper(dc.Name, name, ttl, typeNum, AssureItsAPointer(rd), nil)
 }
 
 // NewRecordConfigFromDnsconfigjs is only for use by dnsrr.go.

@@ -3,15 +3,14 @@ package privatetypesrdata
 import (
 	"fmt"
 
-	"strings"
-
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
+	"strings"
 )
 
 type MIKROTIKFWD struct {
-	ForwardTo string
+	ForwardTo            string
 }
 
 func (rd MIKROTIKFWD) Len() int {
@@ -27,7 +26,7 @@ func (rd MIKROTIKFWD) String() string {
 func MakeMIKROTIKFWD(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) != 1 {
-		return &MIKROTIKFWD{}, fmt.Errorf("MIKROTIK_FWD expects 1 arguments, got %d: %+v", len(args), args)
+		return nil, fmt.Errorf("MIKROTIK_FWD expects 1 arguments, got %d: %+v", len(args), args)
 	}
 	return &MIKROTIKFWD{
 		ForwardTo: mustbe.RawString(args[0]),

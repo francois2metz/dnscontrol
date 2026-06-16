@@ -21,7 +21,7 @@ func (rd MIKROTIKNXDOMAIN) String() string {
 func MakeMIKROTIKNXDOMAIN(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
 	if len(args) != 0 {
-		return &MIKROTIKNXDOMAIN{}, fmt.Errorf("MIKROTIK_NXDOMAIN expects 0 arguments, got %d: %+v", len(args), args)
+		return nil, fmt.Errorf("MIKROTIK_NXDOMAIN expects 0 arguments, got %d: %+v", len(args), args)
 	}
-	return &MIKROTIKNXDOMAIN{}, nil
+	return nil, nil
 }

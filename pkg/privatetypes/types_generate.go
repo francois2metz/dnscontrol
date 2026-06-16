@@ -279,7 +279,7 @@ func generateTypeFile(t *TypeDef) error {
 
 	fmt.Fprintf(&buf, "func (rr *%s) Data() dnsv2.RDATA {\n", typeName)
 	if len(t.Fields) == 0 && len(t.RuntimeFields) == 0 {
-		fmt.Fprintf(&buf, "\treturn &privatetypesrdata.%s{}\n", typeName)
+		fmt.Fprintf(&buf, "\treturn nil\n")
 	} else {
 		fmt.Fprintf(&buf, "\treturn &privatetypesrdata.%s{", typeName)
 		for i, f := range append(t.Fields, t.RuntimeFields...) {
@@ -535,14 +535,14 @@ func generateRdataFile(t *TypeDef) error {
 	maxArgs := minArgs + len(t.OptionalFields)
 	if len(t.Fields) == 0 && len(t.OptionalFields) == 0 {
 		fmt.Fprintf(&buf, "\tif len(args) != 0 {\n")
-		fmt.Fprintf(&buf, "\t\treturn &%s{}, fmt.Errorf(\"%s expects 0 arguments, got %%d: %%+v\", len(args), args)\n", typeName, displayName)
+		fmt.Fprintf(&buf, "\t\treturn nil, fmt.Errorf(\"%s expects 0 arguments, got %%d: %%+v\", len(args), args)\n", displayName)
 	} else {
 		if len(t.OptionalFields) == 0 {
 			fmt.Fprintf(&buf, "\tif len(args) != %d {\n", minArgs)
 		} else {
 			fmt.Fprintf(&buf, "\tif len(args) < %d || len(args) > %d {\n", minArgs, maxArgs)
 		}
-		fmt.Fprintf(&buf, "\t\treturn &%s{}, fmt.Errorf(\"%s expects %d arguments, got %%d: %%+v\", len(args), args)\n", typeName, displayName, (len(t.Fields) + len(t.OptionalFields)))
+		fmt.Fprintf(&buf, "\t\treturn nil, fmt.Errorf(\"%s expects %d arguments, got %%d: %%+v\", len(args), args)\n", displayName, (len(t.Fields) + len(t.OptionalFields)))
 	}
 
 	buf.WriteString("\t}\n")
@@ -553,7 +553,7 @@ func generateRdataFile(t *TypeDef) error {
 	}
 
 	if len(t.Fields) == 0 {
-		fmt.Fprintf(&buf, "\treturn &%s{}, nil\n", typeName)
+		fmt.Fprintf(&buf, "\treturn nil, nil\n")
 	} else {
 		fmt.Fprintf(&buf, "\treturn &%s{\n", typeName)
 		for i, f := range append(t.Fields, t.OptionalFields...) {

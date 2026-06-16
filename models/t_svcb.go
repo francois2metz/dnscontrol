@@ -82,7 +82,7 @@ func (rc *RecordConfig) SetTargetSVCBString(origin, contents string) error {
 	if err != nil {
 		return fmt.Errorf("could not parse SVCB record: %w", err)
 	}
-	rc.RDATA = PointerToRDATA(rrv2)
+	rc.RDATA = AssureItsAPointer(rrv2)
 	rc.ValidateRDATA()
 
 	switch r := record.(type) {

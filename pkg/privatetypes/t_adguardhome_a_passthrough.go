@@ -34,7 +34,7 @@ func (rr *ADGUARDHOMEAPASSTHROUGH) Len() int {
 	return rr.Hdr.Len()
 }
 func (rr *ADGUARDHOMEAPASSTHROUGH) Data() dnsv2.RDATA {
-	return &privatetypesrdata.ADGUARDHOMEAPASSTHROUGH{}
+	return nil
 }
 func (rr *ADGUARDHOMEAPASSTHROUGH) Clone() dnsv2.RR {
 	return &ADGUARDHOMEAPASSTHROUGH{
