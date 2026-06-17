@@ -260,7 +260,7 @@ func updateSerialNumber(origin string, recs models.Records, forcedSerial uint32)
 		recToUpdate.SoaSerial = generateSerial(recToUpdate.SoaSerial)
 	}
 
-	recToUpdate.RDATA = nil
+	recToUpdate.ClearRDATA()
 	recToUpdate.FixUp(origin)
 }
 

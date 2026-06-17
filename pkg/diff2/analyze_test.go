@@ -77,10 +77,9 @@ func makeRec(label, rtype, content string) *models.RecordConfig {
 		panic(fmt.Sprintf("could not parse: %s IN %s %s: %s", r.Name, rtype, content, err))
 	}
 	//fmt.Printf("DEBUG: makeRec should be pointer: %T\n", rrv2)
-	//r.RDATA = rrv2
-	r.RDATA = models.AssureItsAPointer(rrv2)
+	r.SetRDATA(models.AssureItsAPointer(rrv2))
 	r.ValidateRDATA()
-	r.ComparableV3 = r.RDATA.String()
+	r.ComparableV3 = r.GetRDATA().String()
 	// End of hack
 
 	return &r

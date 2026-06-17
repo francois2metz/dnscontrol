@@ -157,7 +157,7 @@ func RRtoRCV2(rr dnsv2.RR, origin string) (models.RecordConfig, error) {
 	case *dnsv2.HTTPS:
 		rd := rr.Data()
 		rdd := rd.(*dnsv2.HTTPS)
-		rc.RDATA = rdd
+		rc.SetRDATA(rdd)
 		rc.ValidateRDATA()
 	case *dnsv2.LOC:
 		err = rc.SetTargetLOC(v.Version, v.Latitude, v.Longitude, v.Altitude, v.Size, v.HorizPre, v.VertPre)
@@ -187,7 +187,7 @@ func RRtoRCV2(rr dnsv2.RR, origin string) (models.RecordConfig, error) {
 	case *dnsv2.SVCB:
 		rd := rr.Data()
 		rdd := rd.(*dnsv2.SVCB)
-		rc.RDATA = rdd
+		rc.SetRDATA(rdd)
 		rc.ValidateRDATA()
 	case *dnsv2.TLSA:
 		err = rc.SetTargetTLSA(v.Usage, v.Selector, v.MatchingType, v.Certificate)

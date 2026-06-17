@@ -193,23 +193,23 @@ func makeChanges(t *testing.T, prv providers.DNSServiceProvider, dc *models.Doma
 
 			if strings.Contains(rc.GetTargetField(), "**current-domain**") {
 				_ = rc.SetTarget(strings.Replace(rc.GetTargetField(), "**current-domain**", domainName, 1))
-				rc.RDATA = nil
+				rc.ClearRDATA()
 				rc.ComparableV3 = ""
 			}
 			if strings.Contains(rc.GetLabelFQDN(), "**current-domain**") {
 				rc.SetLabelFromFQDN(strings.Replace(rc.GetLabelFQDN(), "**current-domain**", domainName, 1), domainName)
-				rc.RDATA = nil
+				rc.ClearRDATA()
 				rc.ComparableV3 = ""
 			}
 
 			if strings.Contains(rc.GetTargetField(), "**subscription-id**") {
 				_ = rc.SetTarget(strings.Replace(rc.GetTargetField(), "**subscription-id**", origConfig["SubscriptionID"], 1))
-				rc.RDATA = nil
+				rc.ClearRDATA()
 				rc.ComparableV3 = ""
 			}
 			if strings.Contains(rc.GetTargetField(), "**resource-group**") {
 				_ = rc.SetTarget(strings.Replace(rc.GetTargetField(), "**resource-group**", origConfig["ResourceGroup"], 1))
-				rc.RDATA = nil
+				rc.ClearRDATA()
 				rc.ComparableV3 = ""
 			}
 
@@ -577,6 +577,9 @@ func loc(name string, d1 uint8, m1 uint8, s1 float32, ns string,
 
 func makeRecAndFix(name, target, typ string) *models.RecordConfig {
 	r := makeRec(name, target, typ)
+	if r == nil {
+		fmt.Printf("DEBUG: makeRecAndFile WHAT???")
+	}
 	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 	return r
 }
@@ -665,7 +668,7 @@ func soa(name string, ns, mbox string, serial, refresh, retry, expire, minttl ui
 	panicOnErr(r.SetTargetSOA(ns, mbox, serial, refresh, retry, expire, minttl))
 
 	// Hack to set .RDATA without importing miekg/dns in pkg/rtypecontrol/fixlegacy.go
-	r.RDATA = &dnsrdatav2.SOA{
+	r.SetRDATA(&dnsrdatav2.SOA{
 		Ns:      ns,
 		Mbox:    mbox,
 		Serial:  serial,
@@ -673,7 +676,7 @@ func soa(name string, ns, mbox string, serial, refresh, retry, expire, minttl ui
 		Retry:   retry,
 		Expire:  expire,
 		Minttl:  minttl,
-	}
+	})
 	r.FixUp(globalDC.Name) // Hack. Populates .RDATA and .TypeNum if needed.
 
 	return r

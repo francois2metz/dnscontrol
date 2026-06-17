@@ -50,8 +50,8 @@ func (rc *RecordConfig) GetTargetCombined() string {
 	// if rc.Type == "CLOUDFLAREAPI_SINGLE_REDIRECT" {
 	// 	fmt.Printf("DEBUG: Commbined here: %v\n", rc)
 	// }
-	if rc.RDATA != nil {
-		return rc.RDATA.String()
+	if rc.GetRDATA() != nil {
+		return rc.GetRDATA().String()
 	}
 
 	// Pseudo records:
@@ -66,7 +66,7 @@ func (rc *RecordConfig) GetTargetCombined() string {
 			// }
 			// return rc.ComparableV3
 			//return fmt.Sprintf("%s atype=%s zone_id=%s evaluate_target_health=%s", rc.target, rc.R53Alias["type"], rc.R53Alias["zone_id"], rc.R53Alias["evaluate_target_health"])
-			return rc.RDATA.String()
+			return rc.GetRDATA().String()
 		case "AZURE_ALIAS":
 			// Differentiate between multiple AZURE_ALIASs on the same label.
 			return fmt.Sprintf("%s atype=%s", rc.target, rc.AzureAlias["type"])
@@ -102,8 +102,8 @@ func (rc *RecordConfig) zoneFileQuoted() string {
 		rc.MustSetTarget(".")
 	}
 
-	if rc.RDATA != nil {
-		return rc.RDATA.String()
+	if rc.GetRDATA() != nil {
+		return rc.GetRDATA().String()
 	}
 	// if rc.Type == "SVCV" || rc.Type == "HTTPS" {
 	// 	if rc.SvcPriority == 0 {

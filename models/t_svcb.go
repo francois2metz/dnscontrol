@@ -51,7 +51,7 @@ func (rc *RecordConfig) SetTargetSVCB(priority uint16, target string, params []d
 	if err != nil {
 		return fmt.Errorf("failed to create RDATA for SVCB record: %w", err)
 	}
-	rc.RDATA = rd
+	rc.SetRDATA(rd)
 	rc.ValidateRDATA()
 	rc.FixUp("")
 
@@ -82,7 +82,7 @@ func (rc *RecordConfig) SetTargetSVCBString(origin, contents string) error {
 	if err != nil {
 		return fmt.Errorf("could not parse SVCB record: %w", err)
 	}
-	rc.RDATA = AssureItsAPointer(rrv2)
+	rc.SetRDATA(AssureItsAPointer(rrv2))
 	rc.ValidateRDATA()
 
 	switch r := record.(type) {
@@ -93,14 +93,14 @@ func (rc *RecordConfig) SetTargetSVCBString(origin, contents string) error {
 	}
 
 	if rc.SvcPriority == 0 {
-		rc.RDATA = &dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: rc.GetTargetField()}
+		rc.SetRDATA(&dnsrdatav2.SVCB{Priority: rc.SvcPriority, Target: rc.GetTargetField()})
 		rc.ValidateRDATA()
 	} else {
 		rd, err := dnsv2.NewData(dnsv2.TypeSVCB, fmt.Sprintf("%d %s %s", rc.SvcPriority, rc.GetTargetField(), rc.SvcParams), origin)
 		if err != nil {
 			panic(fmt.Sprintf("BUG: Failed to create RDATA for HTTPS record: %v", err))
 		}
-		rc.RDATA = rd
+		rc.SetRDATA(rd)
 		rc.ValidateRDATA()
 	}
 	rc.FixUp(".")
@@ -162,117 +162,3 @@ func convertSVCBv1v2(params []dnsv1.SVCBKeyValue) ([]svcbv2.Pair, error) {
 
 	return value, nil
 }
-
-// func SVCBHydrateDesiredEchIgnore(existing, desired Records) {
-
-// 	// Build the list of existing ECH values.
-// 	echs := gatherEchValues(existing)
-
-// 	// // Clone the "desired" list. Its an array of pointers, so we clone the pointers. We can replace any record we want in the "desired" list without mutating the original.
-// 	// newDesired := make(Records, len(desired))
-// 	// copy(newDesired, desired)
-
-// 	// Scan desired for ech=IGNORE.  Replace any records.
-// 	//recs, edits := replaceSvcbIgnores(newDesired, echs)
-// 	replaceSvcbIgnores(&desired, echs)
-
-// 	// if edits {
-// 	// 	return recs
-// 	// }
-// 	// // No changes were made, so we can return the original "desired" list to save memory.
-// 	// return desired
-// }
-
-// // gatherEchValues builds a map of FQDN to ECH values for all SVCB and HTTPS
-// // records in the given set of records.  This is used to support the
-// // "ech=IGNORE" feature, where we want to ignore changes in the ECH value when
-// // comparing records, but still show the ECH value in the output for debugging
-// // purposes.
-// func gatherEchValues(recs Records) map[string]*svcbv2.ECHCONFIG {
-// 	echs := map[string]*svcbv2.ECHCONFIG{}
-// 	for _, rec := range recs {
-// 		if rec.TypeNum == dnsv2.TypeSVCB || rec.TypeNum == dnsv2.TypeHTTPS {
-// 			if value := rec.GetSVCBEchConfig(); value != nil {
-// 				echs[rec.NameFQDN] = value
-// 			}
-// 		}
-// 	}
-// 	return echs
-// }
-
-// TODO: Unexport this?
-
-// // getSVCBEchConfig returns the value of the ECH parameter. The value is a pointer to a clone.
-// func (rc *RecordConfig) GetSVCBEchConfig() *svcbv2.ECHCONFIG {
-// 	if rc.TypeNum != dnsv2.TypeSVCB && rc.TypeNum != dnsv2.TypeHTTPS {
-// 		panic("assertion failed: GetSVCBParam called when .Type is not SVCB or HTTPS")
-// 	}
-// 	if rc.RDATA == nil {
-// 		panic("assertion failed: SVCB/HTTPS record does not have RDATA set")
-// 	}
-
-// 	for _, param := range rc.RDATA.(dnsrdatav2.SVCB).Value {
-// 		key := svcbv2.PairToKey(param)
-// 		if key == svcbv2.KeyEchConfig {
-// 			// p := param.(*svcbv2.ECHCONFIG)
-// 			// c := p.Clone()
-// 			// return c.(*svcbv2.ECHCONFIG), true
-// 			return param.(*svcbv2.ECHCONFIG)
-// 		}
-// 	}
-// 	return nil
-// }
-
-// // func replaceSvcbIgnores(records Records, echs map[string]*svcbv2.ECHCONFIG) (Records, bool) {
-// func replaceSvcbIgnores(records *Records, echs map[string]*svcbv2.ECHCONFIG) {
-// 	// edits := false
-// 	fmt.Printf("DEBUG replaceSvcbIgnores: Called with %d desired records\n", len(*records))
-// 	fmt.Printf("DEBUG replaceSvcbIgnores: echs map has %d entries\n", len(echs))
-// 	for k, v := range echs {
-// 		fmt.Printf("DEBUG replaceSvcbIgnores: echs[%q] = %+v\n", k, v.ECH)
-// 	}
-
-// 	for _, rec := range *records {
-// 		// Not HTTPS/SVCB? skip.
-// 		if rec.TypeNum != dnsv2.TypeSVCB && rec.TypeNum != dnsv2.TypeHTTPS {
-// 			continue
-// 		}
-
-// 		fmt.Printf("DEBUG replaceSvcbIgnores: Processing %s record %q\n", rec.Type, rec.NameFQDN)
-
-// 		// Try to get the ECH.  Not exist Skip.
-// 		ec := rec.GetSVCBEchConfig()
-// 		if ec == nil {
-// 			fmt.Printf("DEBUG replaceSvcbIgnores: record %q has no ECH config\n", rec.NameFQDN)
-// 			continue
-// 		}
-
-// 		// Look for ech=1000, which is our magic marker that this record wants us to substitute the actual ECH value.
-// 		fmt.Printf("DEBUG replaceSvcbIgnores: record %q has ech=%+v (checking if [16 0])\n", rec.NameFQDN, ec.ECH)
-// 		if !bytes.Equal(ec.ECH, []byte{16, 0}) {
-// 			fmt.Printf("DEBUG replaceSvcbIgnores: record %q doesn't have magic marker, skipping\n", rec.NameFQDN)
-// 			continue
-// 		}
-
-// 		if true {
-// 			continue
-// 		}
-
-// 		// Replace the ECH value with the value from "existing".
-// 		fmt.Printf("DEBUG replaceSvcbIgnores: record %q HAS magic marker [16 0], replacing...\n", rec.NameFQDN)
-// 		nEch := echs[rec.NameFQDN]
-// 		if nEch != nil {
-// 			fmt.Printf("DEBUG replaceSvcbIgnores: Found ECH value in echs map: %+v\n", nEch.ECH)
-// 			// Actually update the record's RDATA with the new ECH value.
-// 			rec.RDATA = replaceOrAddEch(rec.RDATA.(dnsrdatav2.SVCB), nEch)
-// 		} else {
-// 			fmt.Printf("DEBUG replaceSvcbIgnores: WARNING: ECH value NOT found in echs map for %q\n", rec.NameFQDN)
-// 		}
-
-// 		// Fix the .ComparableV3.
-// 		rec.ComparableV3 = ""
-// 		rec.FixUp("")
-// 		fmt.Printf("DEBUG replaceSvcbIgnores: Updated ComparableV3 for %q\n", rec.NameFQDN)
-
-// 	}
-// }

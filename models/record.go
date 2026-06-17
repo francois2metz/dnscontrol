@@ -33,7 +33,8 @@ type RecordConfig struct {
 
 	// RDATA is (the fields of the record).
 	// NB(tlim): Not currently used. Placeholder for future feature.
-	RDATA dnsv2.RDATA `json:"rdata,omitempty"`
+	//RDATA dnsv2.RDATA `json:"rdata,omitempty"`
+	rdata dnsv2.RDATA
 
 	// ComparableV3 is an opaque string that can be used to compare two
 	// RecordConfigs for equality. Typically this is the Zonefile line
@@ -231,9 +232,9 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 		TypeNum:  typeNum,
 		Type:     dnsutilv2.TypeToString(typeNum),
 		TTL:      ttl,
-		RDATA:    rd,
 		Metadata: metadata,
 	}
+	rc.SetRDATA(rd)
 	rc.ValidateRDATA()
 
 	rc.Name = name
@@ -265,11 +266,11 @@ func newRecordConfigHelperRC(rc *RecordConfig, typeName string, contents string,
 
 	switch v := rd.(type) {
 	case dnsrdatav2.A:
-		rc.RDATA = &v
+		rc.SetRDATA(&v)
 	case dnsrdatav2.TXT:
-		rc.RDATA = &v
+		rc.SetRDATA(&v)
 	case dnsrdatav2.RP:
-		rc.RDATA = &v
+		rc.SetRDATA(&v)
 	default:
 		fmt.Printf("DEBUG: newRecordConfigHelperRC: unknown type %T\n", v)
 	}
@@ -285,7 +286,7 @@ func newRecordConfigHelperRC(rc *RecordConfig, typeName string, contents string,
 
 func backfill(rc *RecordConfig) error {
 	// Hack to back-fill legacy fields. This will go away eventually.
-	switch rd := rc.RDATA.(type) {
+	switch rd := rc.GetRDATA().(type) {
 	case *dnsrdatav2.A:
 		rc.SetTargetIP(rd.Addr)
 	case *dnsrdatav2.AAAA:
@@ -434,11 +435,13 @@ func makeNameFQDNUnicode(nameFQDN string) string {
 func (rc *RecordConfig) MarshalJSON() ([]byte, error) {
 	recj := &struct {
 		RecordConfig
+		RDATA  string `json:"rdata,omitempty"`
 		Target string `json:"target,omitempty"`
 	}{
 		RecordConfig: *rc,
 		Target:       rc.GetTargetField(),
 	}
+	rc.SetRDATA(rc.rdata)
 	j, err := json.Marshal(*recj)
 	if err != nil {
 		return nil, err
@@ -886,8 +889,8 @@ func (rc *RecordConfig) GetSVCBValue() []dnsv1.SVCBKeyValue {
 	// }
 
 	var s string
-	if rc.RDATA != nil {
-		s = fmt.Sprintf("%s %s %s", rc.NameFQDN, rc.Type, rc.RDATA.String())
+	if rc.GetRDATA() != nil {
+		s = fmt.Sprintf("%s %s %s", rc.NameFQDN, rc.Type, rc.GetRDATA().String())
 	} else {
 		s = fmt.Sprintf("%s %s %d %s %s", rc.NameFQDN, rc.Type, rc.SvcPriority, rc.target, rc.SvcParams)
 	}

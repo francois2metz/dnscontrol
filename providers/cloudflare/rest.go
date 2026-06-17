@@ -371,7 +371,7 @@ func (c *cloudflareProvider) getSingleRedirects(dc *models.DomainConfig, id stri
 		rec.Original = thisPr
 
 		// Store the IDs. These will be needed for update/delete operations.
-		sr := rec.RDATA.(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT)
+		sr := rec.GetRDATA().(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT)
 		sr.SRRRulesetID = rules.ID
 		sr.SRRRulesetRuleID = pr.ID
 		// TODO(tlim) Make these paramters to the NewRecordConfig above.
@@ -440,10 +440,10 @@ func (c *cloudflareProvider) deleteSingleRedirects(domainID string, cfr *private
 }
 
 func (c *cloudflareProvider) updateSingleRedirect(domainID string, oldrec, newrec *models.RecordConfig) error {
-	if err := c.deleteSingleRedirects(domainID, oldrec.RDATA.(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT)); err != nil {
+	if err := c.deleteSingleRedirects(domainID, oldrec.GetRDATA().(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT)); err != nil {
 		return err
 	}
-	return c.createSingleRedirect(domainID, newrec.RDATA.(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT))
+	return c.createSingleRedirect(domainID, newrec.GetRDATA().(*privatetypesrdata.CLOUDFLAREAPISINGLEREDIRECT))
 }
 
 func (c *cloudflareProvider) getWorkerRoutes(id string, domain string) ([]*models.RecordConfig, error) {

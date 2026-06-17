@@ -3,14 +3,17 @@ package main
 // Data-driven tests that exercize the DNS Provider APIs.
 
 import (
+	"runtime/debug"
 	"strings"
 	"testing"
 
+	"github.com/DNSControl/dnscontrol/v4/models"
 	"github.com/DNSControl/dnscontrol/v4/pkg/providers"
 	_ "github.com/DNSControl/dnscontrol/v4/pkg/providers/_all"
 )
 
 func TestDNSProviders(t *testing.T) {
+	debug.SetTraceback("all")
 	provider, domain, cfg := getProvider(t)
 	if provider == nil {
 		return
@@ -22,6 +25,18 @@ func TestDNSProviders(t *testing.T) {
 	t.Run(domain, func(t *testing.T) {
 		runTests(t, provider, domain, cfg)
 	})
+}
+
+func TestMakeTests(t *testing.T) {
+	dc, err := models.NewDomainConfig("example.com")
+	if err != nil {
+		t.FailNow()
+	}
+	globalDC = dc
+
+	debug.SetTraceback("all")
+
+	_ = makeTests()
 }
 
 func makeTests() []*TestGroup {
