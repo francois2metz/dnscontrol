@@ -11,10 +11,10 @@ func TestPorkbunUrlfwd_Plain(t *testing.T) {
 	y := &PORKBUNURLFWD{
 		Hdr: dnsv2.Header{Name: "example.org.", Class: dnsv2.ClassINET},
 		PORKBUNURLFWD: privatetypesrdata.PORKBUNURLFWD{
-			Target: "http://example.com",
-			TypeName: "urlfwd",
+			Target:      "http://example.com",
+			TypeName:    "urlfwd",
 			IncludePath: "no",
-			Wildcard: "no",
+			Wildcard:    "no",
 		},
 	}
 	rry, err := dnsv2.New(y.String())
@@ -30,10 +30,10 @@ func TestPorkbunUrlfwd_WithMetadata(t *testing.T) {
 	y := &PORKBUNURLFWD{
 		Hdr: dnsv2.Header{Name: "example.org.", Class: dnsv2.ClassINET},
 		PORKBUNURLFWD: privatetypesrdata.PORKBUNURLFWD{
-			Target: "http://example.com",
-			TypeName: "urlfwd",
+			Target:      "http://example.com",
+			TypeName:    "urlfwd",
 			IncludePath: "permanent",
-			Wildcard: "no",
+			Wildcard:    "no",
 		},
 	}
 	rry, err := dnsv2.New(y.String())
@@ -49,10 +49,10 @@ func TestPorkbunUrlfwd_WithWildcard(t *testing.T) {
 	y := &PORKBUNURLFWD{
 		Hdr: dnsv2.Header{Name: "example.org.", Class: dnsv2.ClassINET},
 		PORKBUNURLFWD: privatetypesrdata.PORKBUNURLFWD{
-			Target: "http://example.com",
-			TypeName: "urlfwd",
+			Target:      "http://example.com",
+			TypeName:    "urlfwd",
 			IncludePath: "no",
-			Wildcard: "yes",
+			Wildcard:    "yes",
 		},
 	}
 	rry, err := dnsv2.New(y.String())
@@ -63,4 +63,3 @@ func TestPorkbunUrlfwd_WithWildcard(t *testing.T) {
 		t.Fatalf("PORKBUN_URLFWD string presentations should be identical:\n%s\n%s", rry.String(), y.String())
 	}
 }
-

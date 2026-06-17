@@ -23,5 +23,5 @@ func MakeBUNNYDNSPZ(origin string, _ map[string]string, args ...any) (dnsv2.RDAT
 	if len(args) != 0 {
 		return nil, fmt.Errorf("BUNNY_DNS_PZ expects 0 arguments, got %d: %+v", len(args), args)
 	}
-	return nil, nil
+	return &BUNNYDNSPZ{}, nil
 }

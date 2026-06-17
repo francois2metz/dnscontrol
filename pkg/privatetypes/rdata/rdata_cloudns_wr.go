@@ -3,14 +3,15 @@ package privatetypesrdata
 import (
 	"fmt"
 
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
-	"strings"
 )
 
 type CLOUDNSWR struct {
-	Target               string
+	Target string
 }
 
 func (rd CLOUDNSWR) Len() int {

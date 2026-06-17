@@ -3,15 +3,16 @@ package privatetypesrdata
 import (
 	"fmt"
 
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
-	"strings"
 )
 
 type CFWORKERROUTE struct {
-	When                 string
-	Then                 string
+	When string
+	Then string
 }
 
 func (rd CFWORKERROUTE) Len() int {

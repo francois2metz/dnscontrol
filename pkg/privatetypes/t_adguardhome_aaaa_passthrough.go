@@ -6,6 +6,7 @@ import (
 
 	dnsv2 "codeberg.org/miekg/dns"
 	dnsutilv2 "codeberg.org/miekg/dns/dnsutil"
+	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	privatetypesrdata "github.com/DNSControl/dnscontrol/v4/pkg/privatetypes/rdata"
 )
 
@@ -21,6 +22,7 @@ type ADGUARDHOMEAAAAPASSTHROUGH struct {
 	Hdr dnsv2.Header
 
 	privatetypesrdata.ADGUARDHOMEAAAAPASSTHROUGH
+	// Target               string
 }
 
 // Typer interface.
@@ -31,27 +33,30 @@ func (rr *ADGUARDHOMEAAAAPASSTHROUGH) Type() uint16 { return TypeADGUARDHOMEAAAA
 
 func (rr *ADGUARDHOMEAAAAPASSTHROUGH) Header() *dnsv2.Header { return &rr.Hdr }
 func (rr *ADGUARDHOMEAAAAPASSTHROUGH) Len() int {
-	return rr.Hdr.Len()
+	return rr.Hdr.Len() + rr.Data().Len()
 }
 func (rr *ADGUARDHOMEAAAAPASSTHROUGH) Data() dnsv2.RDATA {
-	return nil
+	return &privatetypesrdata.ADGUARDHOMEAAAAPASSTHROUGH{Target: rr.Target}
 }
 func (rr *ADGUARDHOMEAAAAPASSTHROUGH) Clone() dnsv2.RR {
 	return &ADGUARDHOMEAAAAPASSTHROUGH{
-		rr.Hdr,
-		privatetypesrdata.ADGUARDHOMEAAAAPASSTHROUGH{}}
+		Hdr: rr.Hdr,
+		ADGUARDHOMEAAAAPASSTHROUGH: privatetypesrdata.ADGUARDHOMEAAAAPASSTHROUGH{
+			Target: rr.Target,
+		}}
 }
 func (rr *ADGUARDHOMEAAAAPASSTHROUGH) String() string {
-	return rr.Header().Name + "\t" +
+	return (rr.Header().Name + "\t" +
 		strconv.FormatInt(int64(rr.Header().TTL), 10) + "\t" +
-		dnsutilv2.ClassToString(rr.Header().Class) + "\tADGUARDHOME_AAAA_PASSTHROUGH" // RDATA is empty.
+		dnsutilv2.ClassToString(rr.Header().Class) + "\tADGUARDHOME_AAAA_PASSTHROUGH\t" + rr.Data().String())
 }
 
 // Parse makes an RDATA for this type using the tokens from dnsv2's parser.
 func (rr *ADGUARDHOMEAAAAPASSTHROUGH) Parse(tokens []string, s string) error {
 	args := TokensToArgs(tokens)
-	if len(args) != 0 {
-		return fmt.Errorf("ADGUARDHOME_AAAA_PASSTHROUGH requires exactly 0 arguments, got %d", len(args))
+	if len(args) != 1 {
+		return fmt.Errorf("ADGUARDHOME_AAAA_PASSTHROUGH requires exactly 1 arguments, got %d: %v", len(args), args)
 	}
+	rr.Target = mustbe.RawString(args[0])
 	return nil
 }

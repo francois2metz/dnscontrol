@@ -553,7 +553,7 @@ func generateRdataFile(t *TypeDef) error {
 	}
 
 	if len(t.Fields) == 0 {
-		fmt.Fprintf(&buf, "\treturn nil, nil\n")
+		fmt.Fprintf(&buf, "\treturn &%s{}, nil\n", typeName)
 	} else {
 		fmt.Fprintf(&buf, "\treturn &%s{\n", typeName)
 		for i, f := range append(t.Fields, t.OptionalFields...) {

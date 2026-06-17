@@ -3,14 +3,15 @@ package privatetypesrdata
 import (
 	"fmt"
 
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
-	"strings"
 )
 
 type MIKROTIKFWD struct {
-	ForwardTo            string
+	ForwardTo string
 }
 
 func (rd MIKROTIKFWD) Len() int {

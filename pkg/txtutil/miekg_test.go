@@ -52,6 +52,7 @@ func TestZoneify(t *testing.T) {
 		//{"backslash", []string{`with\backslash`}, `"with\\backslash"`},  // FAILING
 		{"multiple", []string{`line1`, `line2`}, `line1 line2`},
 		{"justone", []string{`line1`, `li}ne2`}, `line1 "li}ne2"`},
+		{"empty", []string{``}, `""`},
 		//{"complex", []string{`line with "dquotes" and \backslash\`}, `"line with "dquote" and \backslash\`}, // FAILING
 	}
 	for _, tt := range tests {

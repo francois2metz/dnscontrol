@@ -6,6 +6,7 @@ import (
 
 	dnsv2 "codeberg.org/miekg/dns"
 	dnsutilv2 "codeberg.org/miekg/dns/dnsutil"
+	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	privatetypesrdata "github.com/DNSControl/dnscontrol/v4/pkg/privatetypes/rdata"
 )
 
@@ -21,6 +22,7 @@ type ADGUARDHOMEAPASSTHROUGH struct {
 	Hdr dnsv2.Header
 
 	privatetypesrdata.ADGUARDHOMEAPASSTHROUGH
+	// Target               string
 }
 
 // Typer interface.
@@ -31,27 +33,30 @@ func (rr *ADGUARDHOMEAPASSTHROUGH) Type() uint16 { return TypeADGUARDHOMEAPASSTH
 
 func (rr *ADGUARDHOMEAPASSTHROUGH) Header() *dnsv2.Header { return &rr.Hdr }
 func (rr *ADGUARDHOMEAPASSTHROUGH) Len() int {
-	return rr.Hdr.Len()
+	return rr.Hdr.Len() + rr.Data().Len()
 }
 func (rr *ADGUARDHOMEAPASSTHROUGH) Data() dnsv2.RDATA {
-	return nil
+	return &privatetypesrdata.ADGUARDHOMEAPASSTHROUGH{Target: rr.Target}
 }
 func (rr *ADGUARDHOMEAPASSTHROUGH) Clone() dnsv2.RR {
 	return &ADGUARDHOMEAPASSTHROUGH{
-		rr.Hdr,
-		privatetypesrdata.ADGUARDHOMEAPASSTHROUGH{}}
+		Hdr: rr.Hdr,
+		ADGUARDHOMEAPASSTHROUGH: privatetypesrdata.ADGUARDHOMEAPASSTHROUGH{
+			Target: rr.Target,
+		}}
 }
 func (rr *ADGUARDHOMEAPASSTHROUGH) String() string {
-	return rr.Header().Name + "\t" +
+	return (rr.Header().Name + "\t" +
 		strconv.FormatInt(int64(rr.Header().TTL), 10) + "\t" +
-		dnsutilv2.ClassToString(rr.Header().Class) + "\tADGUARDHOME_A_PASSTHROUGH" // RDATA is empty.
+		dnsutilv2.ClassToString(rr.Header().Class) + "\tADGUARDHOME_A_PASSTHROUGH\t" + rr.Data().String())
 }
 
 // Parse makes an RDATA for this type using the tokens from dnsv2's parser.
 func (rr *ADGUARDHOMEAPASSTHROUGH) Parse(tokens []string, s string) error {
 	args := TokensToArgs(tokens)
-	if len(args) != 0 {
-		return fmt.Errorf("ADGUARDHOME_A_PASSTHROUGH requires exactly 0 arguments, got %d", len(args))
+	if len(args) != 1 {
+		return fmt.Errorf("ADGUARDHOME_A_PASSTHROUGH requires exactly 1 arguments, got %d: %v", len(args), args)
 	}
+	rr.Target = mustbe.RawString(args[0])
 	return nil
 }

@@ -3,13 +3,14 @@ package privatetypesrdata
 import (
 	"fmt"
 
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
-	"strings"
 )
 
 type AKAMAICDN struct {
-	Target               string
+	Target string
 }
 
 func (rd AKAMAICDN) Len() int {

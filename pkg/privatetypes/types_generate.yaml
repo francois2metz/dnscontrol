@@ -3,13 +3,23 @@
 types:
   - name: Adguardhome_A_Passthrough
     codepoint: 65280
-    fields: []
-    test_data: []
+    fields:
+      - name: Target
+        type: RawString
+    test_data:
+      - name: ""
+        values:
+          Target: ""
 
   - name: Adguardhome_AAAA_Passthrough
     codepoint: 65281
-    fields: []
-    test_data: []
+    fields:
+      - name: Target
+        type: RawString
+    test_data:
+      - name: ""
+        values:
+          Target: ""
 
   - name: Akamaicdn
     codepoint: 65282

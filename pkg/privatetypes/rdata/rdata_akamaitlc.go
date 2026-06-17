@@ -3,15 +3,16 @@ package privatetypesrdata
 import (
 	"fmt"
 
+	"strings"
+
 	dnsv2 "codeberg.org/miekg/dns"
 	"github.com/DNSControl/dnscontrol/v4/pkg/mustbe"
 	"github.com/DNSControl/dnscontrol/v4/pkg/txtutil"
-	"strings"
 )
 
 type AKAMAITLC struct {
-	AnswerType           string
-	Target               string
+	AnswerType string
+	Target     string
 }
 
 func (rd AKAMAITLC) Len() int {
@@ -32,6 +33,6 @@ func MakeAKAMAITLC(origin string, _ map[string]string, args ...any) (dnsv2.RDATA
 	}
 	return &AKAMAITLC{
 		AnswerType: mustbe.RawString(args[0]),
-		Target: mustbe.TargetHost(origin, args[1]),
+		Target:     mustbe.TargetHost(origin, args[1]),
 	}, nil
 }
