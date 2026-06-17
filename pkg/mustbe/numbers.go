@@ -117,3 +117,16 @@ func Uint32(arg any) uint32 {
 	}
 	panic(fmt.Sprintf("value %q is type %T, expected uint32", arg, arg))
 }
+
+func Float32(arg any) float32 {
+	switch v := arg.(type) {
+	case float32:
+		return v
+	case float64:
+		if v < 0 || v > math.MaxFloat32 {
+			panic(fmt.Sprintf("value %q overflows uint16", arg))
+		}
+		return float32(v)
+	}
+	panic(fmt.Sprintf("value %q is type %T, expected float32", arg, arg))
+}

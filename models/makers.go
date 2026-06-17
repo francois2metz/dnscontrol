@@ -129,14 +129,35 @@ func MakeHTTPS(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, er
 
 func MakeLOC(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {
 	mustbe.ValidArgs(args)
-	if len(args) != 7 {
-		return nil, fmt.Errorf("MakeLOC expects exactly 7 arguments, got %d: %+v", len(args), args)
+	if len(args) != 12 {
+		return nil, fmt.Errorf("MakeLOC expects exactly 12 arguments, got %d: %+v", len(args), args)
 	}
+	rc := &RecordConfig{}
+	rc.SetLOCParams(
+		mustbe.Uint8(args[0]),
+		mustbe.Uint8(args[1]),
+		mustbe.Float32(args[2]),
+		mustbe.RawString(args[3]),
+		mustbe.Uint8(args[4]),
+		mustbe.Uint8(args[5]),
+		mustbe.Float32(args[6]),
+		mustbe.RawString(args[7]),
+		mustbe.Float32(args[8]),
+		mustbe.Float32(args[9]),
+		mustbe.Float32(args[10]),
+		mustbe.Float32(args[11]),
+	)
+
+	// TODO(tlim): Recfactor SetLOCParams to produce its results.
 	return &dnsrdatav2.LOC{
-		Version: mustbe.Uint8(args[0]), Size: mustbe.Uint8(args[1]),
-		HorizPre: mustbe.Uint8(args[2]), VertPre: mustbe.Uint8(args[3]),
-		Latitude: mustbe.Uint32(args[4]), Longitude: mustbe.Uint32(args[5]),
-		Altitude: mustbe.Uint32(args[6])}, nil
+		Version:   rc.LocVersion,
+		Size:      rc.LocSize,
+		HorizPre:  rc.LocHorizPre,
+		VertPre:   rc.LocVertPre,
+		Latitude:  rc.LocLatitude,
+		Longitude: rc.LocLongitude,
+		Altitude:  rc.LocAltitude,
+	}, nil
 }
 
 func MakeMIKROTIKFWD(origin string, _ map[string]string, args ...any) (dnsv2.RDATA, error) {

@@ -235,7 +235,6 @@ func newRecordConfigHelper(origin, name string, ttl uint32, typeNum uint16, rd d
 		Metadata: metadata,
 	}
 	rc.SetRDATA(rd)
-	rc.ValidateRDATA()
 
 	rc.Name = name
 	rc.NameUnicode = makeLabelNameUnicode(name)
@@ -287,13 +286,27 @@ func newRecordConfigHelperRC(rc *RecordConfig, typeName string, contents string,
 func backfill(rc *RecordConfig) error {
 	// Hack to back-fill legacy fields. This will go away eventually.
 	switch rd := rc.GetRDATA().(type) {
+	case *privatetypesrdata.ALIAS:
+		rc.SetTarget(rd.Target)
+
+	case *privatetypesrdata.AZUREALIAS:
+		rc.SetTarget(rd.Target)
+		rc.AzureAlias = map[string]string{
+			"type": rd.AliasType,
+		}
 	case *dnsrdatav2.A:
 		rc.SetTargetIP(rd.Addr)
 	case *dnsrdatav2.AAAA:
 		rc.SetTargetIP(rd.Addr)
 	case *dnsrdatav2.CAA:
 		rc.SetTargetCAA(rd.Flag, rd.Tag, rd.Value)
+	case *privatetypesrdata.CFWORKERROUTE:
+		rc.SetTarget(fmt.Sprintf("%s,%s", rd.When, rd.Then))
 	case *dnsrdatav2.CNAME:
+		rc.SetTarget(rd.Target)
+	case *dnsrdatav2.DHCID:
+		rc.SetTarget(rd.Digest)
+	case *dnsrdatav2.DNAME:
 		rc.SetTarget(rd.Target)
 	case *dnsrdatav2.DS:
 		rc.SetTargetDS(rd.KeyTag, rd.Algorithm, rd.DigestType, rd.Digest)
@@ -307,6 +320,8 @@ func backfill(rc *RecordConfig) error {
 		rc.SetTarget(rd.Ns)
 	case *dnsrdatav2.NAPTR:
 		rc.SetTargetNAPTR(rd.Order, rd.Preference, rd.Flags, rd.Service, rd.Regexp, rd.Service)
+	case *dnsrdatav2.PTR:
+		rc.SetTarget(rd.Ptr)
 	case *dnsrdatav2.RP:
 		// noop -- no legacy fields
 	case *dnsrdatav2.SMIMEA:
@@ -433,15 +448,16 @@ func makeNameFQDNUnicode(nameFQDN string) string {
 
 // MarshalJSON marshals RecordConfig.
 func (rc *RecordConfig) MarshalJSON() ([]byte, error) {
+	fmt.Printf("DEBUG: MARSHALING %v\n", rc.Name)
 	recj := &struct {
 		RecordConfig
-		RDATA  string `json:"rdata,omitempty"`
-		Target string `json:"target,omitempty"`
+		RDATA  dnsv2.RDATA `json:"rdata,omitempty"`
+		Target string      `json:"target,omitempty"`
 	}{
 		RecordConfig: *rc,
 		Target:       rc.GetTargetField(),
 	}
-	rc.SetRDATA(rc.rdata)
+	recj.RDATA = rc.rdata
 	j, err := json.Marshal(*recj)
 	if err != nil {
 		return nil, err
